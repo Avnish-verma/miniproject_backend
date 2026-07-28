@@ -1,0 +1,35 @@
+{
+  "name": "instagram_clone_backend",
+  "version": "1.0.0",
+  "description": "it's a instagram clone presenting as a miniproject.",
+  "keywords": [
+    "mini_project_backend",
+    "mini_project_by_Avnish_verma",
+    "Avnish_verma",
+    "instagram_clone"
+  ],
+  "homepage": "https://github.com/Avnish-verma/miniproject_backend#readme",
+  "bugs": {
+    "url": "https://github.com/Avnish-verma/miniproject_backend/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Avnish-verma/miniproject_backend.git"
+  },
+  "license": "ISC",
+  "author": "Avnish-Verma",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "node server.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.8.1"
+  }
+}
