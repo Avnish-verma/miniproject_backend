@@ -8,16 +8,16 @@ const transporter = nodemailer.createTransport({
     }
 
 })
-const sendOtp=async (userName,userEmail,otp)=>{
+const sendMail=async (userName,userEmail,subject,message)=>{
     try{
         const mailOptions={
             form:"instagram",
             to:userEmail,
-            subject:"otp verification code",
+            subject:`${subject}`,
             html:`
             <div style="font-family: Arial,sans-serif;padding:20px; border: 1px solid #eee;">
             <h2> Hi ${userName}</h2>
-            <p> please use the following one time password to complete your registration this otp is valid for 5 minutes <h1> ${otp}</h1> if you did not request this code please ignore this email.</p>
+            <p>${message} </p>
             </div>
             `
         }
@@ -27,4 +27,4 @@ const sendOtp=async (userName,userEmail,otp)=>{
     return err;
     }
 }
-module.exports=sendOtp;
+module.exports=sendMail;

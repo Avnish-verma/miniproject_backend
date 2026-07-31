@@ -21,8 +21,8 @@ router.post("/",async(req , res)=>{
     const newUser= userModel({
         userId,password:hashedPassword,emailId,fullname,otp
     });
-
-    sendOtp(fullname.trim(),emailId,otp);
+    let message = `your one time password is <h1> ${otp}</h1>.`;
+    sendOtp(fullname.trim(),emailId,"instagram otp",message );
     //saving in db
     await newUser.save();
     console.log("user saved");
