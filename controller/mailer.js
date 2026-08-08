@@ -1,16 +1,20 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail', // host, port aur family hata kar seedha service use karein
+    host: "smtp.gmail.com",
+    port: 587,             // Port 465 hata kar 587 (STARTTLS) use karein
+    secure: false,         // Port 587 ke liye secure 'false' hona zaroori hai
+    requireTLS: true,      // Secure false hai, par hum connection ko strongly TLS par upgrade karne ko bol rahe hain
     auth: {
         user: process.env.EMAIL,
         pass: process.env.PASS
     },
-    // Cloudflare/Render TLS handshake issues ko bypass karne ke liye:
+    family: 4,             // IPv6 error se bachne ke liye
+    connectionTimeout: 20000, // Render thoda slow hai, isliye hum time 20 seconds de rahe hain
+    greetingTimeout: 20000,   // Server ke response ka wait time badha diya
     tls: {
-        rejectUnauthorized: false 
-    },
-    family:4
+        rejectUnauthorized: false
+    }
 });
 
 const sendMail = async (userName, userEmail, subject, message) => {
@@ -26,11 +30,9 @@ const sendMail = async (userName, userEmail, subject, message) => {
             </div>
             `
         };
-        
-        console.log("Mail bhejne ki koshish kar raha hai..."); 
+        console.log("Mail bhejne ki koshish kar raha hai (Port 587)...");
         await transporter.sendMail(mailOptions);
-        console.log("Mail successfully send ho gaya!"); 
-        
+        console.log("Mail successfully send ho gaya!");
     } catch(err) {
         console.error("Nodemailer Error Details:", err);
         return err;
