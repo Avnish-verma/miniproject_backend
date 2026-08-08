@@ -9,7 +9,8 @@ const transporter = nodemailer.createTransport({
     // Cloudflare/Render TLS handshake issues ko bypass karne ke liye:
     tls: {
         rejectUnauthorized: false 
-    }
+    },
+    family:4
 });
 
 const sendMail = async (userName, userEmail, subject, message) => {
