@@ -23,6 +23,7 @@ const sendMail=async (userName,userEmail,subject,message)=>{
             `
         }
         await transporter.sendMail(mailOptions);
+        console.log("mail sended");
     }
     catch(err){
         console.error("Nodemailer Error Details:", err);
