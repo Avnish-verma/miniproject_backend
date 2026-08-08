@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 const sendMail=async (userName,userEmail,subject,message)=>{
     try{
         const mailOptions={
-            form:"instagram",
+            fromm:"instagram",
             to:userEmail,
             subject:`${subject}`,
             html:`
