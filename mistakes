@@ -1,1 +1,1 @@
-in server.js i have wrote dotenv.config() after require db so there is a error.
+
