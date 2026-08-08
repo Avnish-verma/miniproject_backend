@@ -25,6 +25,7 @@ const sendMail=async (userName,userEmail,subject,message)=>{
         await transporter.sendMail(mailOptions);
     }
     catch(err){
+        console.error("Nodemailer Error Details:", err);
     return err;
     }
 }
