@@ -15,7 +15,7 @@ router.post("/",async(req,res)=>{
     if(!comp){return res.status(400).json({success:false,message:"userId or password is invailid"})};
     if(!user.isEmailVerified){return res.status(400).json({success:"true",message:"verify your email"})};
     const token = jwt.sign({userId,name:user.fullname},process.env.SECRET,{expiresIn:"24hr"});
-    res.status(201).cookie("token",token).json({message:"logged in successfully"});
+    res.status(201).cookie("token",token).json({success:true,message:"logged in successfully"});
 console.log(token);
 });
 router.post("/forgotpassword",async(req,res)=>{
