@@ -22,10 +22,10 @@ const newUser=mongoose.Schema({
     gender:{type:String,enum:['male','female','other']
     },
     otp:Number,
-    profilePic:{type:String,default:""},
+    profilePic:{url:String,public_id:String},
     follower:{type:mongoose.Schema.Types.ObjectId,ref:"users"},
     following:{type:mongoose.Schema.Types.ObjectId,ref:"users"},
-    savedPost:[{type:mongoose.Schema.Types.ObjectId,ref:"posts"}],
+    savedPost:[{type:mongoose.Schema.Types.ObjectId,ref:"posts",default:[]}],
     isEmailVerified:{
         type:Boolean,
         default:false

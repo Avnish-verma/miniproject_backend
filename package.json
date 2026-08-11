@@ -33,6 +33,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.8.1",
     "nodemailer": "^9.0.3",
+    "resend": "^6.18.1",
     "router": "^2.2.0"
   }
 }
