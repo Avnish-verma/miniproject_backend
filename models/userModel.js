@@ -31,5 +31,5 @@ const newUser=mongoose.Schema({
         default:false
     }},{timestamp:true}
 );
-const userModel=mongoose.model("users",newUser);
+const userModel=mongoose.model("User",newUser);
 module.exports=userModel;
