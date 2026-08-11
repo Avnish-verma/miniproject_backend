@@ -19,12 +19,12 @@ const newUser=mongoose.Schema({
         required:true
     },
     bio:String,
-    gender:{type:String,enum:['male','female','other']
+    gender:{type:String,enum:['Male','Female','Other']
     },
     otp:Number,
     profilePic:{url:String,public_id:String},
-    follower:{type:mongoose.Schema.Types.ObjectId,ref:"users"},
-    following:{type:mongoose.Schema.Types.ObjectId,ref:"users"},
+    follower:[{type:mongoose.Schema.Types.ObjectId,ref:"User"}],
+    following:[{type:mongoose.Schema.Types.ObjectId,ref:"User"}],
     savedPost:[{type:mongoose.Schema.Types.ObjectId,ref:"posts",default:[]}],
     isEmailVerified:{
         type:Boolean,
