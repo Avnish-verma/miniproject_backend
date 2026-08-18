@@ -58,8 +58,6 @@ router.get("/user/:userId", async (req, res) => {
         if (!targetUser) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
-
-        // Check if currently logged-in user is following this target user
         const isFollowing = targetUser.follower.includes(req.user._id);
         console.log(`Is the logged-in user following ${userId}?`, isFollowing);
         const data = {
@@ -73,7 +71,7 @@ router.get("/user/:userId", async (req, res) => {
             gender: targetUser.gender,
             isFollowing
         };
-        console.log("Profile Data to be sent:", data);
+        
         res.status(200).json({ success: true, data });
     } catch (err) {
         console.error("Error fetching user profile:", err);

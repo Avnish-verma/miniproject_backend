@@ -1,31 +1,24 @@
 const express= require('express');
 const app = express();
-const cors = require("cors");
-
-app.use(cors({
-    origin:"http://localhost:5501",
-    credentials:true
-}));
-const cookieParser = require('cookie-parser');
 require('dotenv').config();
-app.use(express.json());
-
-app.use(express.urlencoded({extended:true}));
-app.use(cookieParser());
-
+const cors = require("cors");
+const cookieParser = require('cookie-parser');
 const db=require('./mongooseConnection');
 const registerRouter = require("./routes/registerRouter");
 const loginRouter = require("./routes/loginRouter");
 const protect = require("./controller/protect");
 const profileRouter = require("./routes/profileRouter");
 
+app.use(cors({
+    origin:"https://avnilive.netlify.app",
+    credentials:true
+}));
 
-
+app.use(express.json());
+app.use(express.urlencoded({extended:true}));
+app.use(cookieParser());
 app.use("/register",registerRouter);
 app.use("/login",loginRouter)
-app.get("/test",protect,(req,res)=>{
-    res.json({message:"welcome"});
-})
 app.use("/profile",protect,profileRouter);
 app.use("/post",protect,require("./routes/postRouter"));
 app.use("/feed",require("./routes/feedRouter"))
