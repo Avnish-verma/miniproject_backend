@@ -93,6 +93,13 @@ function AppContent() {
     );
   }
 
+  const [activeChatUserId, setActiveChatUserId] = useState(null);
+
+  const handleStartChatWithUser = (targetUserId) => {
+    setActiveChatUserId(targetUserId);
+    navigateTo('chat');
+  };
+
   // Handle viewing another user's profile from search
   const handleSelectUser = (userId) => {
     navigateTo('profile', { userId });
@@ -124,12 +131,19 @@ function AppContent() {
             newPost={newPost}
           />
         )}
-        {currentTab === 'chat' && <ChatView onSelectPost={handleSelectPost} />}
+        {currentTab === 'chat' && (
+          <ChatView
+            onSelectPost={handleSelectPost}
+            initialTargetUserId={activeChatUserId}
+            onClearInitialTarget={() => setActiveChatUserId(null)}
+          />
+        )}
         {currentTab === 'calls' && <CallsPage />}
         {currentTab === 'discover' && (
           <DiscoverPage
             onSelectUser={handleSelectUser}
             onSelectPost={handleSelectPost}
+            onStartChat={handleStartChatWithUser}
           />
         )}
         {currentTab === 'notifications' && <NotificationDrawer />}
@@ -137,6 +151,7 @@ function AppContent() {
           <ProfilePage
             targetUserId={viewingUserId}
             onSelectPost={handleSelectPost}
+            onStartChat={handleStartChatWithUser}
           />
         )}
         {currentTab === 'settings' && <SettingsPage />}

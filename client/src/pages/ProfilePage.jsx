@@ -21,7 +21,7 @@ import {
   X,
 } from 'lucide-react';
 
-export default function ProfilePage({ targetUserId, onSelectPost }) {
+export default function ProfilePage({ targetUserId, onSelectPost, onStartChat }) {
   const { user: currentUser, updateUser } = useAuth();
   const { isUserOnline } = useSocket();
   const { startCall } = useCall();
@@ -366,6 +366,16 @@ export default function ProfilePage({ targetUserId, onSelectPost }) {
                 isFollowing={isFollowing}
                 onClick={handleToggleFollow}
               />
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onStartChat && onStartChat(profile._id || profile.userId)}
+                leftIcon={MessageCircle}
+                title="Send Message"
+              >
+                Message
+              </Button>
 
               <Button
                 variant="outline"

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 
-export default function DiscoverPage({ onSelectUser, onSelectPost }) {
+export default function DiscoverPage({ onSelectUser, onSelectPost, onStartChat }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'people' | 'trending' | 'media'
   const [userResults, setUserResults] = useState([]);
@@ -199,12 +199,27 @@ export default function DiscoverPage({ onSelectUser, onSelectPost }) {
                         </div>
                       </div>
 
-                      <Button
-                        variant="follow"
-                        size="xs"
-                        isFollowing={isFollowing}
-                        onClick={() => handleToggleFollow(u._id)}
-                      />
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {onStartChat && (
+                          <Button
+                            variant="outline"
+                            size="xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onStartChat(u._id || u.userId);
+                            }}
+                            title="Send Message"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="follow"
+                          size="xs"
+                          isFollowing={isFollowing}
+                          onClick={() => handleToggleFollow(u._id)}
+                        />
+                      </div>
                     </div>
                   );
                 })}

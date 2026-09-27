@@ -13,12 +13,15 @@ import {
   ArrowLeft,
   ArrowRight,
   Loader2,
+  Plus,
+  UserPlus,
+  X,
 } from 'lucide-react';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
 import api from '../../services/api';
 
-export default function ChatView({ onSelectPost }) {
+export default function ChatView({ onSelectPost, initialTargetUserId, onClearInitialTarget }) {
   const { user } = useAuth();
   const { socket, isUserOnline } = useSocket();
   const { startCall } = useCall();
@@ -33,8 +36,65 @@ export default function ChatView({ onSelectPost }) {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
 
+  // New Chat modal state
+  const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
+  const [newUserSearch, setNewUserSearch] = useState('');
+  const [newUsersList, setNewUsersList] = useState([]);
+  const [isSearchingNewUsers, setIsSearchingNewUsers] = useState(false);
+
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+
+  // Start or open a conversation with a specific user ID
+  const handleStartConversationWithUser = async (targetUserId) => {
+    try {
+      const res = await api.post('/api/v1/chat/conversations', { recipientId: targetUserId });
+      if (res.data?.data) {
+        const conv = res.data.data;
+        setConversations((prev) => {
+          if (!prev.some((c) => c._id === conv._id)) {
+            return [conv, ...prev];
+          }
+          return prev;
+        });
+        setActiveConversation(conv);
+        setShowMobileChat(true);
+        setIsNewChatModalOpen(false);
+        setNewUserSearch('');
+      }
+    } catch (err) {
+      console.error('Failed to create conversation:', err);
+    }
+  };
+
+  // Handle initial target user passed via prop (e.g. from Profile page)
+  useEffect(() => {
+    if (!initialTargetUserId) return;
+    handleStartConversationWithUser(initialTargetUserId);
+    if (onClearInitialTarget) onClearInitialTarget();
+  }, [initialTargetUserId]);
+
+  // Search users for new conversation modal
+  useEffect(() => {
+    if (!isNewChatModalOpen) return;
+    const timeout = setTimeout(async () => {
+      setIsSearchingNewUsers(true);
+      try {
+        const res = await api.get(`/api/v1/users/search?q=${newUserSearch}&limit=15`);
+        if (res.data?.data?.users) {
+          const others = res.data.data.users.filter(
+            (u) => u._id !== user?._id && u.userId !== user?.userId
+          );
+          setNewUsersList(others);
+        }
+      } catch (err) {
+        console.error('Failed to search users:', err);
+      } finally {
+        setIsSearchingNewUsers(false);
+      }
+    }, 250);
+    return () => clearTimeout(timeout);
+  }, [newUserSearch, isNewChatModalOpen, user]);
 
   // Fetch all conversations
   const fetchConversations = async () => {
@@ -232,6 +292,17 @@ export default function ChatView({ onSelectPost }) {
             <h2 className="text-[19px] font-bold text-[#111111] dark:text-[#F5F5F5] tracking-tight">
               Messages
             </h2>
+            <button
+              onClick={() => {
+                setIsNewChatModalOpen(true);
+                setNewUserSearch('');
+              }}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-[8px] bg-[#111111] dark:bg-[#F5F5F5] text-[#FAFAF8] dark:text-[#111111] hover:opacity-90 transition-opacity text-[12px] font-semibold shadow-xs"
+              title="Start a new message"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.5px]" />
+              <span>New</span>
+            </button>
           </div>
 
           <div className="relative flex items-center">
@@ -249,8 +320,20 @@ export default function ChatView({ onSelectPost }) {
         {/* Conversation Items */}
         <div className="flex-1 overflow-y-auto divide-y divide-[#E7E5E2]/60 dark:divide-[#292929]/60">
           {filteredConversations.length === 0 ? (
-            <div className="p-8 text-center text-[13px] text-[#6B6B6B] dark:text-[#A0A0A0] leading-relaxed">
-              No conversations yet. Start a conversation with someone from your network.
+            <div className="p-8 text-center text-[13px] text-[#6B6B6B] dark:text-[#A0A0A0] leading-relaxed space-y-3">
+              <p>No conversations yet.</p>
+              <Button
+                variant="accent"
+                size="sm"
+                onClick={() => {
+                  setIsNewChatModalOpen(true);
+                  setNewUserSearch('');
+                }}
+                leftIcon={Plus}
+                className="mx-auto"
+              >
+                Start New Message
+              </Button>
             </div>
           ) : (
             filteredConversations.map((conv) => {
@@ -584,9 +667,99 @@ export default function ChatView({ onSelectPost }) {
             <p className="text-[13px] text-[#6B6B6B] dark:text-[#A0A0A0] max-w-xs leading-relaxed">
               Send direct messages, share thoughts, or start real-time peer audio and video calls.
             </p>
+            <Button
+              variant="accent"
+              size="sm"
+              onClick={() => {
+                setIsNewChatModalOpen(true);
+                setNewUserSearch('');
+              }}
+              leftIcon={Plus}
+              className="mt-3"
+            >
+              Send New Message
+            </Button>
           </div>
         )}
       </div>
+
+      {/* New Conversation Modal */}
+      {isNewChatModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[#FFFFFF] dark:bg-[#151515] border border-[#E7E5E2] dark:border-[#292929] rounded-[14px] shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-4 border-b border-[#E7E5E2] dark:border-[#292929] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-[#FF5C35] dark:text-[#FF6845]" />
+                <h3 className="font-bold text-[16px] text-[#111111] dark:text-[#F5F5F5]">
+                  New Conversation
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsNewChatModalOpen(false)}
+                className="p-1.5 rounded-full text-[#6B6B6B] hover:text-[#111111] dark:hover:text-[#F5F5F5] hover:bg-[#F4F3F0] dark:hover:bg-[#1C1C1C] transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3 border-b border-[#E7E5E2] dark:border-[#292929]">
+              <div className="relative flex items-center">
+                <Search className="absolute left-3 w-4 h-4 text-[#929292] dark:text-[#707070]" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={newUserSearch}
+                  onChange={(e) => setNewUserSearch(e.target.value)}
+                  placeholder="Search people by name or @username..."
+                  className="w-full h-[38px] pl-9 pr-3 rounded-[9px] bg-[#FAFAF8] dark:bg-[#0D0D0D] border border-[#E7E5E2] dark:border-[#292929] focus:border-[#FF5C35] dark:focus:border-[#FF6845] text-[13px] text-[#111111] dark:text-[#F5F5F5] outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto divide-y divide-[#E7E5E2]/40 dark:divide-[#292929]/40 p-2">
+              {isSearchingNewUsers ? (
+                <div className="py-10 flex flex-col items-center justify-center gap-2 text-[#929292]">
+                  <Loader2 className="w-5 h-5 animate-spin text-[#FF5C35]" />
+                  <span className="text-[13px]">Searching users...</span>
+                </div>
+              ) : newUsersList.length === 0 ? (
+                <div className="py-10 text-center text-[13px] text-[#929292] px-4">
+                  {newUserSearch
+                    ? `No accounts found matching "${newUserSearch}"`
+                    : 'Search for any user above to start chatting with them.'}
+                </div>
+              ) : (
+                newUsersList.map((u) => {
+                  const online = isUserOnline(u._id);
+                  return (
+                    <div
+                      key={u._id}
+                      onClick={() => handleStartConversationWithUser(u._id)}
+                      className="flex items-center justify-between p-3 rounded-[9px] hover:bg-[#F4F3F0] dark:hover:bg-[#1C1C1C] cursor-pointer transition-colors group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Avatar src={u.profilePic} name={u.fullname} size="md" isOnline={online} />
+                        <div className="min-w-0">
+                          <p className="font-semibold text-[13px] text-[#111111] dark:text-[#F5F5F5] truncate group-hover:text-[#FF5C35] dark:group-hover:text-[#FF6845] transition-colors">
+                            {u.fullname}
+                          </p>
+                          <p className="text-[11px] text-[#6B6B6B] dark:text-[#A0A0A0] truncate">
+                            @{u.userId}
+                          </p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="xs" className="shrink-0 pointer-events-none">
+                        Message
+                      </Button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
