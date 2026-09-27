@@ -1,13 +1,7 @@
- const express = require("express");
-const mongoose = require("mongoose");
+const { connection, connectDB } = require('./src/config/db');
 
-
-mongoose.connect(process.env.URI).then(()=>{
-      console.log("connected");
-
-})
-.catch((err)=>{
-    console.log(err)
+connectDB().catch((err) => {
+  console.error('[Database Connection Error]:', err.message);
 });
 
-module.exports = mongoose.connection;
+module.exports = connection;

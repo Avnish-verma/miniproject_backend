@@ -1,12 +1,24 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const postModel  = require("../models/postModel");
+const feedService = require('../src/services/feedService');
+const { optionalAuth } = require('../src/middleware/auth');
 
-router.get("/",async(req,res)=>{
-    const page = parseInt(req.query.page)||1;
-    const limit = parseInt(req.query.limit)||10;
-    const skip = (page-1)*limit;
-    const post = await postModel.find().sort({createdAt:-1}).skip(skip).limit(limit).populate("postedBy").lean();
-    res.json({post});
-})
-module.exports= router;
+router.get('/', optionalAuth, async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 15;
+    const currentUserId = req.user ? req.user._id : null;
+
+    const result = await feedService.getFeed(currentUserId, { page, limit });
+    res.json({
+      success: true,
+      post: result.posts,
+      posts: result.posts,
+      pagination: result.pagination,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+module.exports = router;

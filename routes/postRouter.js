@@ -1,68 +1,58 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const postModel = require("../models/postModel");
-const upload = require("../controller/upload");
-const commentModel = require("../models/commentModel"); 
-router.get("/upload-post",upload("posts","post"),async(req,res)=>{
-    res.status(200).json({success:true,message:"upload info",data:req.uploadInfo});
+const protect = require('../controller/protect');
+const postService = require('../src/services/postService');
+const mediaService = require('../src/services/mediaService');
+
+router.get('/upload-post', (req, res) => {
+  const userId = req.user ? req.user.userId : 'legacy_user';
+  const uploadInfo = mediaService.generateUploadSignature('posts', 'post', userId);
+  req.uploadInfo = uploadInfo;
+  res.status(200).json({ success: true, message: 'upload info', data: uploadInfo, uploadInfo });
 });
-router.post("/create-post",async(req,res)=>{
-    const {caption,postUrl,public_id,description} = req.body;
-    const newPost = new postModel({
-        postedBy:req.user._id,
-        caption,
-        postUrl,
-        public_id,
-        description
+
+router.post('/create-post', protect, async (req, res, next) => {
+  try {
+    const post = await postService.createPost(req.user._id, req.body);
+    res.status(201).json({ success: true, message: 'Post created', data: post });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/like/:postId', protect, async (req, res, next) => {
+  try {
+    const { postId } = req.params;
+    const result = await postService.toggleLike(postId, req.user._id);
+    res.status(200).json({
+      success: true,
+      message: result.isLiked ? 'Post liked' : 'Post unliked',
+      data: result.post,
     });
-    console.log(newPost);
-    await newPost.save();
-    res.status(201).json({success:true,message:"Post created",data:newPost});
-})
-router.post("/like/:postId",async(req,res)=>{
-    const {postId} = req.params;
-    const post = await postModel.findById(postId);
-    const isLiked =await post.likes.includes(req.user._id);
-    if(isLiked){
-        post.likes.pull(req.user._id);
-    } else {
-        post.likes.push(req.user._id);
-    }
-    await post.save();
-    res.status(200).json({success:true,message:"Post liked",data:post});
-}); 
-router.post("/comment/:postId", async (req, res) => {
-    try {
-        const { postId } = req.params;
-        const { text } = req.body;
-
-        if (!text || text.trim() === "") {
-            return res.status(400).json({ success: false, message: "Comment text cannot be empty" });
-        }
-        console.log("Comment Text:", text);
-        const post = await postModel.findById(postId);
-        if (!post) return res.status(404).json({ success: false, message: "Post not found" });
-
-        const newComment = new commentModel({
-            postId,
-            commentedBy: req.user._id,
-            text
-        });
-        console.log("New Comment Object:", newComment);
-        await newComment.save();
-        res.status(201).json({ success: true, message: "Comment added successfully", data: newComment });
-    } catch (err) {
-        res.status(500).json({ success: false, message: "Server error", error: err.message });
-    }
+  } catch (error) {
+    next(error);
+  }
 });
 
-router.get("/comments/:postId", async (req, res) => {
-    try {
-        const { postId } = req.params;
-        const comments = await commentModel.find({ postId }).populate("commentedBy", "userId fullname profilePic").sort({ createdAt: -1 });
-        res.status(200).json({ success: true, data: comments });
-    } catch (err) {
-        res.status(500).json({ success: false, message: "Server error", error: err.message });
-    }
+router.post('/comment/:postId', protect, async (req, res, next) => {
+  try {
+    const { postId } = req.params;
+    const { text } = req.body;
+    const comment = await postService.addComment(postId, req.user._id, { text });
+    res.status(201).json({ success: true, message: 'Comment added successfully', data: comment });
+  } catch (error) {
+    next(error);
+  }
 });
-module.exports= router;
+
+router.get('/comments/:postId', async (req, res, next) => {
+  try {
+    const { postId } = req.params;
+    const result = await postService.getComments(postId, { page: 1, limit: 100 });
+    res.status(200).json({ success: true, data: result.comments });
+  } catch (error) {
+    next(error);
+  }
+});
+
+module.exports = router;
