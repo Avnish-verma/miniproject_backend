@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const getBaseUrl = () => {
+// Production backend hosted on Render
+export const PRODUCTION_BACKEND_URL = 'https://miniproject-backend-rdei.onrender.com';
+
+export const getBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
@@ -10,7 +13,7 @@ const getBaseUrl = () => {
       return '';
     }
   }
-  return 'https://miniproject-backend-rdei.onrender.com';
+  return PRODUCTION_BACKEND_URL;
 };
 
 const api = axios.create({

@@ -23,6 +23,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "build": "npm run build --prefix client",
     "backup": "node src/scripts/backup.js",
     "migrate": "node src/scripts/migrate.js",
     "rollback": "node src/scripts/rollback.js",
