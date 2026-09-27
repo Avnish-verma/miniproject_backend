@@ -11,6 +11,8 @@ const allowedOrigins = [
   'http://127.0.0.1:3000',
   'https://avnilive.netlify.app',
   'https://miniprojectbackend-zeta.vercel.app',
+  'https://social.shiftaura.in',
+  'http://social.shiftaura.in',
   env.CLIENT_URL,
 ].filter(Boolean);
 
@@ -18,7 +20,7 @@ const isOriginAllowed = (origin) => {
   if (!origin) return true;
   if (process.env.NODE_ENV !== 'production') return true;
   if (allowedOrigins.indexOf(origin) !== -1) return true;
-  if (origin.endsWith('.vercel.app') || origin.endsWith('.netlify.app')) return true;
+  if (origin.endsWith('.vercel.app') || origin.endsWith('.netlify.app') || origin.endsWith('shiftaura.in')) return true;
   return false;
 };
 
