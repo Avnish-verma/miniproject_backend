@@ -14,10 +14,18 @@ export default function StoryViewerModal({ isOpen, onClose, storyGroup, initialI
   const [isLoadingViewers, setIsLoadingViewers] = useState(false);
 
   const progressIntervalRef = useRef(null);
+  const videoRef = useRef(null);
 
   const stories = storyGroup?.stories || [];
   const currentStory = stories[currentIndex];
   const isOwnStory = storyGroup?.user?._id === user?._id || storyGroup?.user?.userId === user?.userId;
+
+  const isVideoStory =
+    currentStory?.mediaType === 'video' ||
+    (currentStory?.mediaUrl &&
+      (currentStory.mediaUrl.endsWith('.mp4') ||
+        currentStory.mediaUrl.endsWith('.webm') ||
+        currentStory.mediaUrl.includes('/video/')));
 
   // Reset index when story group changes
   useEffect(() => {
@@ -26,11 +34,28 @@ export default function StoryViewerModal({ isOpen, onClose, storyGroup, initialI
     setShowViewers(false);
   }, [storyGroup, initialIndex]);
 
+  // Pause/play video when isPaused or showViewers changes
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isPaused || showViewers) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  }, [isPaused, showViewers, currentIndex]);
+
   // Mark story viewed & load viewers if own story
   useEffect(() => {
     if (!isOpen || !currentStory) return;
 
     setProgress(0);
+
+    // Stop any previously playing video
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {});
+    }
 
     // Record view if not own story
     if (!isOwnStory && !currentStory.viewedByCurrentUser) {
@@ -58,9 +83,9 @@ export default function StoryViewerModal({ isOpen, onClose, storyGroup, initialI
     }
   }, [isOpen, currentStory?._id, isOwnStory]);
 
-  // 5-second progress timer
+  // Progress timer for photo and text stories (video uses its own timeupdate)
   useEffect(() => {
-    if (!isOpen || isPaused || showViewers) return;
+    if (!isOpen || isPaused || showViewers || isVideoStory) return;
 
     const intervalTime = 50; // ms
     const increment = (intervalTime / 5000) * 100; // 5000ms duration
@@ -76,7 +101,7 @@ export default function StoryViewerModal({ isOpen, onClose, storyGroup, initialI
     }, intervalTime);
 
     return () => clearInterval(progressIntervalRef.current);
-  }, [isOpen, currentIndex, isPaused, showViewers, stories.length]);
+  }, [isOpen, currentIndex, isPaused, showViewers, stories.length, isVideoStory]);
 
   if (!isOpen || !storyGroup || stories.length === 0 || !currentStory) {
     return null;
@@ -200,13 +225,29 @@ export default function StoryViewerModal({ isOpen, onClose, storyGroup, initialI
         <div className="relative flex-1 w-full h-full flex items-center justify-center overflow-hidden">
           {currentStory.mediaUrl ? (
             <div className="relative w-full h-full bg-black flex items-center justify-center">
-              <img
-                src={currentStory.mediaUrl}
-                alt="Story content"
-                className="w-full h-full object-cover"
-              />
+              {isVideoStory ? (
+                <video
+                  ref={videoRef}
+                  src={currentStory.mediaUrl}
+                  autoPlay
+                  playsInline
+                  onTimeUpdate={(e) => {
+                    if (e.target.duration) {
+                      setProgress((e.target.currentTime / e.target.duration) * 100);
+                    }
+                  }}
+                  onEnded={handleNext}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <img
+                  src={currentStory.mediaUrl}
+                  alt="Story content"
+                  className="w-full h-full object-cover"
+                />
+              )}
               {currentStory.text && (
-                <div className="absolute bottom-16 left-4 right-4 text-center p-3 rounded-[10px] bg-black/50 backdrop-blur-sm text-white text-[14px] font-medium leading-snug">
+                <div className="absolute bottom-16 left-4 right-4 text-center p-3 rounded-[10px] bg-black/50 backdrop-blur-sm text-white text-[14px] font-medium leading-snug z-20">
                   {currentStory.text}
                 </div>
               )}

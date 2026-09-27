@@ -3,6 +3,9 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { CallProvider } from './context/CallContext';
+import { PwaProvider } from './context/PwaContext';
+import { NotificationProvider } from './context/NotificationContext';
+import { ToastProvider } from './context/ToastContext';
 
 import AppLayout from './components/layout/AppLayout';
 import FeedPage from './pages/FeedPage';
@@ -10,12 +13,16 @@ import ChatView from './components/chat/ChatView';
 import DiscoverPage from './pages/DiscoverPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import NotificationDrawer from './components/notifications/NotificationDrawer';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import PostComposer from './components/feed/PostComposer';
 import CallsPage from './pages/CallsPage';
 import CallOverlay from './components/call/CallOverlay';
+import OfflineBanner from './components/common/OfflineBanner';
+import InstallPromptBanner from './components/common/InstallPromptBanner';
+import NotificationPermissionModal from './components/notifications/NotificationPermissionModal';
 import { Loader2 } from 'lucide-react';
 
 const getRouteFromLocation = () => {
@@ -24,6 +31,11 @@ const getRouteFromLocation = () => {
   const params = new URLSearchParams(window.location.search);
   const postId = params.get('post') || null;
   const userId = params.get('user') || null;
+
+  if (rawPath === 'reset-password' || params.has('token')) {
+    return { tab: 'reset-password', userId: null, postId: null };
+  }
+
   const validTabs = ['feed', 'chat', 'calls', 'discover', 'notifications', 'profile', 'settings'];
   const tab = validTabs.includes(rawPath) ? rawPath : 'feed';
   return { tab, userId, postId };
@@ -32,7 +44,7 @@ const getRouteFromLocation = () => {
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const initialRoute = getRouteFromLocation();
-  const [currentTab, setCurrentTab] = useState(initialRoute.tab); // 'feed' | 'chat' | 'discover' | 'notifications' | 'profile' | 'settings'
+  const [currentTab, setCurrentTab] = useState(initialRoute.tab); // 'feed' | 'chat' | 'discover' | 'notifications' | 'profile' | 'settings' | 'reset-password'
   const [authView, setAuthView] = useState('login'); // 'login' | 'register'
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [viewingUserId, setViewingUserId] = useState(initialRoute.userId);
@@ -71,6 +83,31 @@ function AppContent() {
     }
   };
 
+  const handleStartChatWithUser = (targetUserId) => {
+    setActiveChatUserId(targetUserId);
+    navigateTo('chat');
+  };
+
+  // Handle viewing another user's profile from search or chat
+  const handleSelectUser = (userId) => {
+    navigateTo('profile', { userId });
+  };
+
+  // Handle deep post selection from search, chat, or profile
+  const handleSelectPost = (postId) => {
+    navigateTo('feed', { postId });
+  };
+
+  const handleClearFocusedPost = () => {
+    setFocusedPostId(null);
+    window.history.replaceState({ tab: 'feed', userId: null, postId: null }, '', '/feed');
+  };
+
+  // Dedicated Reset Password view accessible directly from email link
+  if (currentTab === 'reset-password') {
+    return <ResetPasswordPage onNavigateLogin={() => navigateTo('feed')} />;
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAF8] dark:bg-[#0D0D0D] text-[#111111] dark:text-[#F5F5F5] gap-3">
@@ -94,34 +131,17 @@ function AppContent() {
     );
   }
 
-  const handleStartChatWithUser = (targetUserId) => {
-    setActiveChatUserId(targetUserId);
-    navigateTo('chat');
-  };
-
-  // Handle viewing another user's profile from search
-  const handleSelectUser = (userId) => {
-    navigateTo('profile', { userId });
-  };
-
-  // Handle deep post selection from search, chat, or profile
-  const handleSelectPost = (postId) => {
-    navigateTo('feed', { postId });
-  };
-
-  const handleClearFocusedPost = () => {
-    setFocusedPostId(null);
-    window.history.replaceState({ tab: 'feed', userId: null, postId: null }, '', '/feed');
-  };
-
   return (
     <>
+      <OfflineBanner />
+
       <AppLayout
         currentTab={currentTab}
         setCurrentTab={(tab) => navigateTo(tab)}
         onOpenComposer={() => setIsComposerOpen(true)}
       >
-        {currentTab === 'feed' && (
+        {/* Persistent Tab Stacks for Instant App-Like Navigation */}
+        <div className={currentTab === 'feed' ? 'block' : 'hidden'}>
           <FeedPage
             onOpenComposer={() => setIsComposerOpen(true)}
             focusedPostId={focusedPostId}
@@ -129,31 +149,44 @@ function AppContent() {
             onSelectUser={handleSelectUser}
             newPost={newPost}
           />
-        )}
-        {currentTab === 'chat' && (
+        </div>
+
+        <div className={currentTab === 'chat' ? 'block' : 'hidden'}>
           <ChatView
             onSelectPost={handleSelectPost}
             initialTargetUserId={activeChatUserId}
             onClearInitialTarget={() => setActiveChatUserId(null)}
           />
-        )}
-        {currentTab === 'calls' && <CallsPage />}
-        {currentTab === 'discover' && (
+        </div>
+
+        <div className={currentTab === 'calls' ? 'block' : 'hidden'}>
+          <CallsPage />
+        </div>
+
+        <div className={currentTab === 'discover' ? 'block' : 'hidden'}>
           <DiscoverPage
             onSelectUser={handleSelectUser}
             onSelectPost={handleSelectPost}
             onStartChat={handleStartChatWithUser}
           />
-        )}
-        {currentTab === 'notifications' && <NotificationDrawer />}
-        {currentTab === 'profile' && (
+        </div>
+
+        <div className={currentTab === 'notifications' ? 'block' : 'hidden'}>
+          <NotificationDrawer />
+        </div>
+
+        <div className={currentTab === 'profile' ? 'block' : 'hidden'}>
           <ProfilePage
             targetUserId={viewingUserId}
             onSelectPost={handleSelectPost}
             onStartChat={handleStartChatWithUser}
+            onSelectUser={handleSelectUser}
           />
-        )}
-        {currentTab === 'settings' && <SettingsPage />}
+        </div>
+
+        <div className={currentTab === 'settings' ? 'block' : 'hidden'}>
+          <SettingsPage />
+        </div>
       </AppLayout>
 
       {/* Post Composer Modal */}
@@ -165,8 +198,14 @@ function AppContent() {
         }}
       />
 
-      {/* 1-to-1 WebRTC Voice & Video Call Overlay */}
+      {/* 1-to-1 WebRTC Voice & Video Call Overlay with PiP Minimization */}
       <CallOverlay />
+
+      {/* PWA Install Prompt Banner */}
+      <InstallPromptBanner />
+
+      {/* Polite Web Push Notification Permission Opt-In Modal */}
+      <NotificationPermissionModal />
     </>
   );
 }
@@ -177,7 +216,13 @@ export default function App() {
       <AuthProvider>
         <SocketProvider>
           <CallProvider>
-            <AppContent />
+            <PwaProvider>
+              <NotificationProvider>
+                <ToastProvider>
+                  <AppContent />
+                </ToastProvider>
+              </NotificationProvider>
+            </PwaProvider>
           </CallProvider>
         </SocketProvider>
       </AuthProvider>

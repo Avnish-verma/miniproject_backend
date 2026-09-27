@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import {
   Heart,
@@ -9,6 +9,8 @@ import {
   Trash2,
   Send,
   CheckCircle2,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
@@ -154,6 +156,34 @@ export default function PostCard({
     (mediaItem && mediaItem.mediaType === 'video') ||
     (mediaUrl && (mediaUrl.endsWith('.mp4') || mediaUrl.includes('/video/')));
 
+  const videoRef = useRef(null);
+  const [isMuted, setIsMuted] = useState(true);
+
+  // Viewport-aware autoplay: Only the currently visible video plays
+  useEffect(() => {
+    if (!isVideo || !videoRef.current) return;
+
+    const el = videoRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.55) {
+            el.play().catch(() => {});
+          } else {
+            el.pause();
+          }
+        });
+      },
+      { threshold: [0, 0.55, 1.0] }
+    );
+
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      el.pause();
+    };
+  }, [isVideo, mediaUrl]);
+
   return (
     <article
       id={`post-${post._id}`}
@@ -259,12 +289,32 @@ export default function PostCard({
               className="relative mt-3 rounded-[12px] overflow-hidden border border-[#E7E5E2] dark:border-[#292929] bg-[#000000] cursor-pointer select-none max-h-[500px] flex items-center justify-center"
             >
               {isVideo ? (
-                <video
-                  src={mediaUrl}
-                  controls
-                  playsInline
-                  className="w-full max-h-[500px] object-contain"
-                />
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <video
+                    ref={videoRef}
+                    src={mediaUrl}
+                    muted={isMuted}
+                    loop
+                    playsInline
+                    className="w-full max-h-[500px] object-contain"
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsMuted(!isMuted);
+                    }}
+                    className="absolute bottom-3 right-3 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors z-10"
+                    title={isMuted ? 'Unmute video' : 'Mute video'}
+                    aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+                  >
+                    {isMuted ? (
+                      <VolumeX className="w-4 h-4 stroke-[1.75px]" />
+                    ) : (
+                      <Volume2 className="w-4 h-4 stroke-[1.75px]" />
+                    )}
+                  </button>
+                </div>
               ) : (
                 <img
                   src={mediaUrl}

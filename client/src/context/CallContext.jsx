@@ -25,6 +25,113 @@ const ICE_SERVERS = {
 
 const RINGING_TIMEOUT_MS = 35000;
 
+class CallAudioSynthesizer {
+  constructor() {
+    this.ctx = null;
+    this.interval = null;
+  }
+
+  init() {
+    if (!this.ctx && typeof window !== 'undefined') {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        this.ctx = new AudioCtx();
+      }
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
+  }
+
+  playIncomingRingtone() {
+    this.stop();
+    this.init();
+    if (!this.ctx) return;
+
+    const playBurst = () => {
+      if (!this.ctx || this.ctx.state !== 'running') return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc1.type = 'sine';
+        osc2.type = 'sine';
+        osc1.frequency.setValueAtTime(440, now);
+        osc2.frequency.setValueAtTime(480, now);
+
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.12, now + 0.05);
+        gain.gain.setValueAtTime(0.12, now + 1.2);
+        gain.gain.linearRampToValueAtTime(0, now + 1.3);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + 1.3);
+        osc2.stop(now + 1.3);
+      } catch (e) {}
+    };
+
+    playBurst();
+    this.interval = setInterval(playBurst, 2400);
+
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try {
+        navigator.vibrate([300, 200, 300, 200, 500]);
+      } catch (e) {}
+    }
+  }
+
+  playOutgoingRingtone() {
+    this.stop();
+    this.init();
+    if (!this.ctx) return;
+
+    const playPulse = () => {
+      if (!this.ctx || this.ctx.state !== 'running') return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(425, now);
+
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.08, now + 0.05);
+        gain.gain.setValueAtTime(0.08, now + 0.9);
+        gain.gain.linearRampToValueAtTime(0, now + 1.0);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 1.0);
+      } catch (e) {}
+    };
+
+    playPulse();
+    this.interval = setInterval(playPulse, 2800);
+  }
+
+  stop() {
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try {
+        navigator.vibrate(0);
+      } catch (e) {}
+    }
+  }
+}
+
 export const CallProvider = ({ children }) => {
   const { socket } = useSocket();
   const { user } = useAuth();
@@ -37,12 +144,14 @@ export const CallProvider = ({ children }) => {
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   // Debug metrics
   const [iceConnectionState, setIceConnectionState] = useState('new');
   const [signalingState, setSignalingState] = useState('stable');
   const [peerConnectionState, setPeerConnectionState] = useState('new');
 
+  const audioSynthRef = useRef(new CallAudioSynthesizer());
   const peerConnectionRef = useRef(null);
   const localStreamRef = useRef(null);
   const remoteStreamRef = useRef(null);
@@ -100,6 +209,8 @@ export const CallProvider = ({ children }) => {
       console.log(`[CallContext] Cleaning up call. Reason: ${reason}`);
     }
 
+    audioSynthRef.current.stop();
+    setIsMinimized(false);
     clearRingingTimer();
     stopTimer();
 
@@ -261,11 +372,13 @@ export const CallProvider = ({ children }) => {
       setActiveCall({ callId, recipientUser: caller, type: callType });
       setCallState(CALL_STATES.INCOMING_CALL);
       isCallerRef.current = false;
+      audioSynthRef.current.playIncomingRingtone();
     };
 
     // 2. Ringing state for caller
     const handleRinging = ({ callId }) => {
       setCallState(CALL_STATES.RINGING);
+      audioSynthRef.current.playOutgoingRingtone();
     };
 
     // 3. Callee accepted call -> Caller transitions to CONNECTING & creates WebRTC Offer
@@ -273,6 +386,7 @@ export const CallProvider = ({ children }) => {
       // Only the caller generates the SDP Offer to prevent glare/collision
       if (!isCallerRef.current) return;
 
+      audioSynthRef.current.stop();
       clearRingingTimer();
       setCallState(CALL_STATES.CONNECTING);
       startTimer();
@@ -294,6 +408,7 @@ export const CallProvider = ({ children }) => {
 
     // 4. Callee receives WebRTC Offer -> creates WebRTC Answer
     const handleOffer = async ({ callId, sdp }) => {
+      audioSynthRef.current.stop();
       const pc = peerConnectionRef.current;
       if (pc && sdp) {
         try {
@@ -314,6 +429,7 @@ export const CallProvider = ({ children }) => {
 
     // 5. Caller receives WebRTC Answer
     const handleAnswer = async ({ sdp }) => {
+      audioSynthRef.current.stop();
       const pc = peerConnectionRef.current;
       if (pc && sdp) {
         try {
@@ -410,6 +526,7 @@ export const CallProvider = ({ children }) => {
     isCallerRef.current = true;
     setActiveCall({ recipientUser, type });
     setCallState(CALL_STATES.OUTGOING_CALL);
+    audioSynthRef.current.playOutgoingRingtone();
 
     const stream = await getMediaStream(type);
 
@@ -444,6 +561,7 @@ export const CallProvider = ({ children }) => {
   const acceptCall = async () => {
     if (!socket || !incomingCall) return;
 
+    audioSynthRef.current.stop();
     clearRingingTimer();
     isCallerRef.current = false;
     const { callId, caller, callType } = incomingCall;
@@ -469,6 +587,7 @@ export const CallProvider = ({ children }) => {
 
   // Reject incoming call (Callee)
   const rejectCall = (reason = 'declined') => {
+    audioSynthRef.current.stop();
     clearRingingTimer();
     if (socket && incomingCall) {
       socket.emit('call:reject', { callId: incomingCall.callId, reason });
@@ -478,6 +597,7 @@ export const CallProvider = ({ children }) => {
 
   // End call (Hangup)
   const endCall = () => {
+    audioSynthRef.current.stop();
     clearRingingTimer();
     const currentCall = activeCallRef.current || activeCall;
     if (socket && currentCall && currentCall.callId) {
@@ -512,6 +632,9 @@ export const CallProvider = ({ children }) => {
     }
   };
 
+  const minimizeCall = () => setIsMinimized(true);
+  const maximizeCall = () => setIsMinimized(false);
+
   return (
     <CallContext.Provider
       value={{
@@ -523,6 +646,9 @@ export const CallProvider = ({ children }) => {
         isAudioMuted,
         isVideoOff,
         callDuration,
+        isMinimized,
+        minimizeCall,
+        maximizeCall,
         iceConnectionState,
         signalingState,
         peerConnectionState,

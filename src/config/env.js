@@ -27,8 +27,10 @@ const env = {
   // WebRTC STUN/TURN
   STUN_SERVER: process.env.STUN_SERVER || 'stun:stun.l.google.com:19302',
   TURN_SERVER: process.env.TURN_SERVER || '',
-  TURN_USERNAME: process.env.TURN_USERNAME || '',
-  TURN_PASSWORD: process.env.TURN_PASSWORD || '',
+  // Web Push VAPID Keys
+  VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY || 'BDQzjGQt51PjsYWrE5YpfzIMcu_0EuELmu2noQi99ra5UZttfZA3xUx1Hbxy0Iir8QB_u6DeyCtN-OchO883RHE',
+  VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY || '5oJxAmoI9wvz32ZH0lLnF5394D3kTHCJJvuvsL7b-6A',
+  VAPID_SUBJECT: process.env.VAPID_SUBJECT || 'mailto:support@shiftaura.in',
   
   API_BASE_URL: process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`
 };

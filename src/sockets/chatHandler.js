@@ -1,6 +1,7 @@
 const SOCKET_EVENTS = require('../constants/events');
 const Conversation = require('../models/Conversation');
 const chatService = require('../services/chatService');
+const pushService = require('../services/pushService');
 const logger = require('../utils/logger');
 const { isUserOnline } = require('./presenceHandler');
 
@@ -79,6 +80,21 @@ const chatHandler = (io, socket) => {
           io.to(`user:${memberId.toString()}`).emit(SOCKET_EVENTS.MESSAGE_NEW, {
             message,
             conversationId,
+          });
+
+          // Dispatch Web Push notification for background/offline delivery
+          pushService.sendToUser(memberId, {
+            title: socket.user.fullname || socket.user.userId || 'ShiftAura',
+            body: text || (mediaUrl ? 'Sent you an attachment' : 'Sent you a message'),
+            icon: socket.user.profilePic || '/favicon.svg',
+            tag: `chat-${conversationId}`,
+            data: {
+              url: `/chat?user=${socket.user.userId}`,
+              conversationId,
+              type: 'MESSAGE',
+            },
+          }).catch((err) => {
+            logger.warn(`[Socket Chat] Push dispatch error: ${err.message}`);
           });
         }
       }

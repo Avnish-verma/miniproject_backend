@@ -1,16 +1,52 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Shield, Moon, Sun, Lock, LogOut, Check, CheckCircle2, User, Bell } from 'lucide-react';
+import { usePwa } from '../context/PwaContext';
+import { useNotifications } from '../context/NotificationContext';
+import { useToast } from '../context/ToastContext';
+import {
+  Shield,
+  Moon,
+  Sun,
+  Lock,
+  LogOut,
+  Check,
+  CheckCircle2,
+  User,
+  Bell,
+  Volume2,
+  VolumeX,
+  Smartphone,
+  Info,
+  Download,
+} from 'lucide-react';
 import Button from '../components/common/Button';
 import api from '../services/api';
 
 export default function SettingsPage() {
   const { user, updateUser, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { isInstallable, isInstalled, promptInstall, resetDismissal } = usePwa();
+  const { isSupported: pushSupported, permission, isSubscribed, subscribeToPush, unsubscribeFromPush, isPending: pushPending } = useNotifications();
+  const toast = useToast();
+
   const [isPrivate, setIsPrivate] = useState(user?.privacy?.isPrivate || false);
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Sound settings
+  const [soundEnabled, setSoundEnabled] = useState(
+    () => localStorage.getItem('shiftaura_sound_enabled') !== 'false'
+  );
+
+  const handleToggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    localStorage.setItem('shiftaura_sound_enabled', String(next));
+    if (toast?.info) {
+      toast.info(next ? 'Sound effects enabled' : 'Sound effects muted');
+    }
+  };
 
   const handleTogglePrivacy = async () => {
     const nextPrivacyState = !isPrivate;
@@ -25,32 +61,48 @@ export default function SettingsPage() {
       if (res.data?.data) {
         updateUser(res.data.data);
         setSavedSuccess(true);
+        if (toast?.success) {
+          toast.success('Privacy preferences updated');
+        }
         setTimeout(() => setSavedSuccess(false), 2500);
       }
     } catch (err) {
       console.error('Update privacy failed:', err);
       setIsPrivate(!nextPrivacyState);
+      if (toast?.error) {
+        toast.error('Failed to update privacy settings');
+      }
     } finally {
       setIsSaving(false);
     }
   };
 
+  const handleTogglePush = async () => {
+    if (isSubscribed) {
+      const ok = await unsubscribeFromPush();
+      if (ok && toast?.info) toast.info('Push notifications disabled');
+    } else {
+      const ok = await subscribeToPush();
+      if (ok && toast?.success) toast.success('Push notifications enabled!');
+    }
+  };
+
   return (
-    <div className="max-w-2xl mx-auto space-y-6 pb-12">
+    <div className="max-w-2xl mx-auto space-y-6 pb-16 px-4 select-none">
       {/* Page Title */}
-      <div className="border-b border-[#E7E5E2] dark:border-[#292929] pb-4">
+      <div className="border-b border-[#E7E5E2] dark:border-[#292929] pb-4 pt-2">
         <h1 className="text-[22px] font-bold text-[#111111] dark:text-[#F5F5F5] tracking-tight">
           Settings
         </h1>
         <p className="text-[13px] text-[#6B6B6B] dark:text-[#A0A0A0] mt-1">
-          Manage your account preferences, privacy visibility, and platform security.
+          Manage your account preferences, notifications, audio, and application installation.
         </p>
       </div>
 
       {/* 1. Account Section */}
-      <div className="bg-[#FFFFFF] dark:bg-[#151515] border border-[#E7E5E2] dark:border-[#292929] rounded-[12px] p-5 space-y-3">
+      <div className="bg-[#FFFFFF] dark:bg-[#151515] border border-[#E7E5E2] dark:border-[#292929] rounded-[14px] p-5 space-y-3 shadow-xs">
         <div className="flex items-center gap-2 text-[#111111] dark:text-[#F5F5F5] font-semibold text-[14px]">
-          <User className="w-4 h-4 text-[#FF5C35] dark:text-[#FF6845] stroke-[1.75px]" />
+          <User className="w-4 h-4 text-[#FF5C35] stroke-[2px]" />
           <span>Account</span>
         </div>
 
@@ -77,10 +129,119 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* 2. Privacy Section */}
-      <div className="bg-[#FFFFFF] dark:bg-[#151515] border border-[#E7E5E2] dark:border-[#292929] rounded-[12px] p-5 space-y-4">
+      {/* 2. PWA Application Section */}
+      <div className="bg-[#FFFFFF] dark:bg-[#151515] border border-[#E7E5E2] dark:border-[#292929] rounded-[14px] p-5 space-y-3 shadow-xs">
         <div className="flex items-center gap-2 text-[#111111] dark:text-[#F5F5F5] font-semibold text-[14px]">
-          <Shield className="w-4 h-4 text-[#FF5C35] dark:text-[#FF6845] stroke-[1.75px]" />
+          <Smartphone className="w-4 h-4 text-[#FF5C35] stroke-[2px]" />
+          <span>Application Experience</span>
+        </div>
+
+        <div className="flex items-center justify-between pt-1">
+          <div className="max-w-[75%]">
+            <h4 className="font-semibold text-[13px] text-[#111111] dark:text-[#F5F5F5]">
+              {isInstalled ? 'ShiftAura is installed' : 'Install ShiftAura App'}
+            </h4>
+            <p className="text-[12px] text-[#6B6B6B] dark:text-[#A0A0A0] mt-0.5 leading-relaxed">
+              {isInstalled
+                ? 'Running as a standalone native-feeling application with background support.'
+                : 'Install ShiftAura directly onto your device for faster startup, calls, and notifications.'}
+            </p>
+          </div>
+
+          {isInstalled ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#16845B]/15 text-[#16845B] dark:text-[#38A878] text-[12px] font-semibold">
+              <CheckCircle2 className="w-3.5 h-3.5 stroke-[2px]" />
+              Installed
+            </span>
+          ) : isInstallable ? (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={promptInstall}
+              className="flex items-center gap-1.5 bg-[#FF5C35] hover:bg-[#FF481F]"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Install</span>
+            </Button>
+          ) : (
+            <span className="text-[12px] text-[#808080]">Available on browser</span>
+          )}
+        </div>
+      </div>
+
+      {/* 3. Notifications & Push Section */}
+      <div className="bg-[#FFFFFF] dark:bg-[#151515] border border-[#E7E5E2] dark:border-[#292929] rounded-[14px] p-5 space-y-3 shadow-xs">
+        <div className="flex items-center gap-2 text-[#111111] dark:text-[#F5F5F5] font-semibold text-[14px]">
+          <Bell className="w-4 h-4 text-[#FF5C35] stroke-[2px]" />
+          <span>Web Push Notifications</span>
+        </div>
+
+        <div className="flex items-center justify-between pt-1">
+          <div className="max-w-[75%]">
+            <h4 className="font-semibold text-[13px] text-[#111111] dark:text-[#F5F5F5]">
+              Background Notifications
+            </h4>
+            <p className="text-[12px] text-[#6B6B6B] dark:text-[#A0A0A0] mt-0.5 leading-relaxed">
+              Receive notifications for incoming calls, direct messages, and interactions even when the app is in the background.
+            </p>
+          </div>
+
+          {pushSupported ? (
+            <Button
+              variant={isSubscribed ? 'outline' : 'primary'}
+              size="sm"
+              disabled={pushPending}
+              onClick={handleTogglePush}
+              className={isSubscribed ? '' : 'bg-[#FF5C35] hover:bg-[#FF481F] text-white'}
+            >
+              {pushPending ? 'Updating...' : isSubscribed ? 'Disable' : 'Enable'}
+            </Button>
+          ) : (
+            <span className="text-[12px] text-[#808080]">Not supported on this browser</span>
+          )}
+        </div>
+      </div>
+
+      {/* 4. Sounds Section */}
+      <div className="bg-[#FFFFFF] dark:bg-[#151515] border border-[#E7E5E2] dark:border-[#292929] rounded-[14px] p-5 space-y-3 shadow-xs">
+        <div className="flex items-center gap-2 text-[#111111] dark:text-[#F5F5F5] font-semibold text-[14px]">
+          <Volume2 className="w-4 h-4 text-[#FF5C35] stroke-[2px]" />
+          <span>Audio & Ringtone</span>
+        </div>
+
+        <div className="flex items-center justify-between pt-1">
+          <div>
+            <h4 className="font-semibold text-[13px] text-[#111111] dark:text-[#F5F5F5]">
+              Call Ringtones & Audio Tones
+            </h4>
+            <p className="text-[12px] text-[#6B6B6B] dark:text-[#A0A0A0] mt-0.5">
+              Play sound for incoming calls and audio feedback.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={soundEnabled}
+            onClick={handleToggleSound}
+            className={`w-11 h-6 rounded-full transition-colors duration-150 relative focus:outline-none ${
+              soundEnabled ? 'bg-[#FF5C35]' : 'bg-[#E7E5E2] dark:bg-[#292929]'
+            }`}
+            aria-label="Toggle sound"
+          >
+            <span
+              className={`block w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-150 ${
+                soundEnabled ? 'translate-x-5' : 'translate-x-0.5'
+              }`}
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* 5. Privacy Section */}
+      <div className="bg-[#FFFFFF] dark:bg-[#151515] border border-[#E7E5E2] dark:border-[#292929] rounded-[14px] p-5 space-y-4 shadow-xs">
+        <div className="flex items-center gap-2 text-[#111111] dark:text-[#F5F5F5] font-semibold text-[14px]">
+          <Shield className="w-4 h-4 text-[#FF5C35] stroke-[2px]" />
           <span>Privacy & Visibility</span>
         </div>
 
@@ -100,10 +261,8 @@ export default function SettingsPage() {
             aria-checked={isPrivate}
             onClick={handleTogglePrivacy}
             disabled={isSaving}
-            className={`w-11 h-6 rounded-full transition-colors duration-150 relative focus:outline-none focus:ring-2 focus:ring-[#FF5C35]/30 ${
-              isPrivate
-                ? 'bg-[#FF5C35] dark:bg-[#FF6845]'
-                : 'bg-[#E7E5E2] dark:bg-[#292929]'
+            className={`w-11 h-6 rounded-full transition-colors duration-150 relative focus:outline-none ${
+              isPrivate ? 'bg-[#FF5C35]' : 'bg-[#E7E5E2] dark:bg-[#292929]'
             }`}
             aria-label="Toggle private account"
           >
@@ -114,22 +273,15 @@ export default function SettingsPage() {
             />
           </button>
         </div>
-
-        {savedSuccess && (
-          <div className="flex items-center gap-1.5 text-[12px] text-[#16845B] dark:text-[#38A878] font-medium pt-1">
-            <CheckCircle2 className="w-3.5 h-3.5 stroke-[1.75px]" />
-            <span>Privacy preferences saved</span>
-          </div>
-        )}
       </div>
 
-      {/* 3. Appearance Section */}
-      <div className="bg-[#FFFFFF] dark:bg-[#151515] border border-[#E7E5E2] dark:border-[#292929] rounded-[12px] p-5 space-y-4">
+      {/* 6. Appearance Section */}
+      <div className="bg-[#FFFFFF] dark:bg-[#151515] border border-[#E7E5E2] dark:border-[#292929] rounded-[14px] p-5 space-y-4 shadow-xs">
         <div className="flex items-center gap-2 text-[#111111] dark:text-[#F5F5F5] font-semibold text-[14px]">
           {isDark ? (
-            <Moon className="w-4 h-4 text-[#FF5C35] dark:text-[#FF6845] stroke-[1.75px]" />
+            <Moon className="w-4 h-4 text-[#FF5C35] stroke-[2px]" />
           ) : (
-            <Sun className="w-4 h-4 text-[#FF5C35] dark:text-[#FF6845] stroke-[1.75px]" />
+            <Sun className="w-4 h-4 text-[#FF5C35] stroke-[2px]" />
           )}
           <span>Appearance</span>
         </div>
@@ -161,17 +313,35 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* 4. Session & Logout */}
+      {/* 7. About ShiftAura Section */}
+      <div className="bg-[#FFFFFF] dark:bg-[#151515] border border-[#E7E5E2] dark:border-[#292929] rounded-[14px] p-5 space-y-3 shadow-xs">
+        <div className="flex items-center gap-2 text-[#111111] dark:text-[#F5F5F5] font-semibold text-[14px]">
+          <Info className="w-4 h-4 text-[#FF5C35] stroke-[2px]" />
+          <span>About ShiftAura</span>
+        </div>
+
+        <div className="text-[13px] text-[#6B6B6B] dark:text-[#A0A0A0] space-y-1.5">
+          <p className="font-semibold text-[#111111] dark:text-[#F5F5F5]">
+            ShiftAura Social Communication Platform
+          </p>
+          <p className="text-[12px]">Version 1.0.0 (Production Release)</p>
+          <p className="text-[12px] text-[#808080]">
+            Equipped with WebRTC End-to-End Voice & Video Calling, Realtime Socket.IO Messaging, Web Push Background Notifications, and PWA Standalone Support.
+          </p>
+        </div>
+      </div>
+
+      {/* 8. Session & Logout */}
       <div className="pt-2">
         <Button
           type="button"
           variant="destructive"
           size="lg"
           onClick={logout}
-          className="w-full flex items-center justify-center gap-2"
+          className="w-full flex items-center justify-center gap-2 bg-[#D64545] hover:bg-[#B83838] text-white"
         >
           <LogOut className="w-4 h-4 stroke-[1.75px]" />
-          <span>Log Out of NOVA</span>
+          <span>Log Out of ShiftAura</span>
         </Button>
       </div>
     </div>

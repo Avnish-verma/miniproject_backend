@@ -5,6 +5,7 @@ import { useCall } from '../context/CallContext';
 import Avatar from '../components/common/Avatar';
 import Button from '../components/common/Button';
 import PostCard from '../components/feed/PostCard';
+import FollowListModal from '../components/profile/FollowListModal';
 import api from '../services/api';
 import {
   Camera,
@@ -21,7 +22,7 @@ import {
   X,
 } from 'lucide-react';
 
-export default function ProfilePage({ targetUserId, onSelectPost, onStartChat }) {
+export default function ProfilePage({ targetUserId, onSelectPost, onStartChat, onSelectUser }) {
   const { user: currentUser, updateUser } = useAuth();
   const { isUserOnline } = useSocket();
   const { startCall } = useCall();
@@ -36,6 +37,7 @@ export default function ProfilePage({ targetUserId, onSelectPost, onStartChat })
   const [activeTab, setActiveTab] = useState('posts'); // 'posts' | 'media' | 'saved'
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'feed'
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [followModalConfig, setFollowModalConfig] = useState({ isOpen: false, type: 'followers' });
 
   // Edit form state
   const [fullname, setFullname] = useState('');
@@ -317,19 +319,29 @@ export default function ProfilePage({ targetUserId, onSelectPost, onStartChat })
 
         {/* Stats Row: Followers, Following, Posts */}
         <div className="flex items-center justify-center gap-8 pt-4 pb-2 text-center select-none">
-          <div>
+          <button
+            type="button"
+            onClick={() => setFollowModalConfig({ isOpen: true, type: 'followers' })}
+            className="hover:opacity-80 transition-opacity cursor-pointer text-center"
+            title="View Followers"
+          >
             <p className="font-bold text-[18px] text-[#111111] dark:text-[#F5F5F5] leading-none">
               {profile.followersCount || 0}
             </p>
-            <p className="text-[12px] text-[#6B6B6B] dark:text-[#A0A0A0] mt-1">Followers</p>
-          </div>
+            <p className="text-[12px] text-[#6B6B6B] dark:text-[#A0A0A0] mt-1 hover:underline">Followers</p>
+          </button>
 
-          <div>
+          <button
+            type="button"
+            onClick={() => setFollowModalConfig({ isOpen: true, type: 'following' })}
+            className="hover:opacity-80 transition-opacity cursor-pointer text-center"
+            title="View Following"
+          >
             <p className="font-bold text-[18px] text-[#111111] dark:text-[#F5F5F5] leading-none">
               {profile.followingCount || 0}
             </p>
-            <p className="text-[12px] text-[#6B6B6B] dark:text-[#A0A0A0] mt-1">Following</p>
-          </div>
+            <p className="text-[12px] text-[#6B6B6B] dark:text-[#A0A0A0] mt-1 hover:underline">Following</p>
+          </button>
 
           <div>
             <p className="font-bold text-[18px] text-[#111111] dark:text-[#F5F5F5] leading-none">
@@ -613,6 +625,16 @@ export default function ProfilePage({ targetUserId, onSelectPost, onStartChat })
           </div>
         </div>
       )}
+
+      {/* Followers & Following List Modal */}
+      <FollowListModal
+        isOpen={followModalConfig.isOpen}
+        type={followModalConfig.type}
+        userId={profile.userId || profile._id}
+        onClose={() => setFollowModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        onSelectUser={onSelectUser}
+        onStartChat={onStartChat}
+      />
     </div>
   );
 }

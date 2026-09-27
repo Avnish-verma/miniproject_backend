@@ -1,6 +1,16 @@
 import React, { useEffect, useRef } from 'react';
 import { useCall, CALL_STATES } from '../../context/CallContext';
-import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff, ShieldCheck } from 'lucide-react';
+import {
+  Phone,
+  PhoneOff,
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  ShieldCheck,
+  Minimize2,
+  Maximize2,
+} from 'lucide-react';
 import Avatar from '../common/Avatar';
 
 export default function CallOverlay() {
@@ -13,6 +23,9 @@ export default function CallOverlay() {
     isAudioMuted,
     isVideoOff,
     callDuration,
+    isMinimized,
+    minimizeCall,
+    maximizeCall,
     acceptCall,
     rejectCall,
     endCall,
@@ -125,6 +138,93 @@ export default function CallOverlay() {
   if (inCallActive) {
     const isVideoCall = activeCall && activeCall.type === 'video';
 
+    // 2A. Minimized Picture-in-Picture Mini-Dock
+    if (isMinimized) {
+      return (
+        <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-[95] w-64 sm:w-72 bg-[#151515] border border-[#2B2B2B] rounded-[16px] p-3 shadow-2xl text-white select-none animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
+
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#292929]">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-[#38A878] animate-pulse shrink-0" />
+              <span className="font-bold text-[13px] text-[#F5F5F5] truncate">
+                {activeCall?.recipientUser?.fullname || 'ShiftAura Call'}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-mono text-[#A0A0A0]">
+                {callState === CALL_STATES.CONNECTED ? formatDuration(callDuration) : '...'}
+              </span>
+              <button
+                onClick={maximizeCall}
+                className="p-1.5 rounded-full hover:bg-[#252525] text-[#A0A0A0] hover:text-white transition-colors"
+                title="Return to full call"
+                aria-label="Maximize call"
+              >
+                <Maximize2 className="w-4 h-4 stroke-[1.75px]" />
+              </button>
+            </div>
+          </div>
+
+          {/* Mini Stage Preview */}
+          <div className="relative w-full h-28 rounded-[10px] overflow-hidden bg-black flex items-center justify-center mb-2.5">
+            {isVideoCall ? (
+              <video
+                ref={remoteVideoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-1.5">
+                <Avatar
+                  src={activeCall?.recipientUser?.profilePic}
+                  name={activeCall?.recipientUser?.fullname}
+                  size="md"
+                />
+                <span className="text-[11px] text-[#A0A0A0]">Encrypted Audio</span>
+              </div>
+            )}
+          </div>
+
+          {/* Mini Action Controls */}
+          <div className="flex items-center justify-center gap-2">
+            <button
+              onClick={toggleAudio}
+              className={`p-2 rounded-full transition-colors ${
+                isAudioMuted ? 'bg-[#D64545] text-white' : 'bg-[#252525] text-[#F5F5F5] hover:bg-[#333333]'
+              }`}
+              title={isAudioMuted ? 'Unmute' : 'Mute'}
+            >
+              {isAudioMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </button>
+
+            {isVideoCall && (
+              <button
+                onClick={toggleVideo}
+                className={`p-2 rounded-full transition-colors ${
+                  isVideoOff ? 'bg-[#D64545] text-white' : 'bg-[#252525] text-[#F5F5F5] hover:bg-[#333333]'
+                }`}
+                title={isVideoOff ? 'Start Camera' : 'Stop Camera'}
+              >
+                {isVideoOff ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+              </button>
+            )}
+
+            <button
+              onClick={endCall}
+              className="p-2 rounded-full bg-[#D64545] hover:bg-[#B83838] text-white transition-colors"
+              title="End Call"
+            >
+              <PhoneOff className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // 2B. Full-Screen Call Experience
     return (
       <div className="fixed inset-0 z-[100] bg-[#0D0D0D] text-white flex flex-col justify-between p-4 sm:p-6 select-none">
         {/* Dedicated audio element for voice audio output */}
@@ -149,9 +249,20 @@ export default function CallOverlay() {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-[8px] bg-[#151515] border border-[#292929] text-[12px] text-[#A0A0A0]">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#38A878] stroke-[1.75px]" />
-            <span>{isVideoCall ? 'WebRTC Video' : 'Encrypted Audio'}</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-[8px] bg-[#151515] border border-[#292929] text-[12px] text-[#A0A0A0]">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#38A878] stroke-[1.75px]" />
+              <span>{isVideoCall ? 'WebRTC Video' : 'Encrypted Audio'}</span>
+            </div>
+
+            <button
+              onClick={minimizeCall}
+              className="p-1.5 rounded-[8px] bg-[#151515] border border-[#292929] hover:bg-[#252525] text-[#A0A0A0] hover:text-white transition-colors"
+              title="Minimize call"
+              aria-label="Minimize call"
+            >
+              <Minimize2 className="w-4 h-4 stroke-[1.75px]" />
+            </button>
           </div>
         </div>
 

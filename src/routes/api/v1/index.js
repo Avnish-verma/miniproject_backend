@@ -11,6 +11,7 @@ const callRoutes = require('./callRoutes');
 const notificationRoutes = require('./notificationRoutes');
 const mediaRoutes = require('./mediaRoutes');
 const storyRoutes = require('./storyRoutes');
+const pushRoutes = require('./pushRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
@@ -22,6 +23,7 @@ router.use('/calls', callRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/media', mediaRoutes);
 router.use('/stories', storyRoutes);
+router.use('/push', pushRoutes);
 
 // Health check endpoint
 router.get('/health', (_req, res) => {

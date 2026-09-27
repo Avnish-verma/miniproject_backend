@@ -2,6 +2,7 @@ const SOCKET_EVENTS = require('../constants/events');
 const callService = require('../services/callService');
 const Call = require('../models/Call');
 const Notification = require('../models/Notification');
+const pushService = require('../services/pushService');
 const logger = require('../utils/logger');
 const { isUserOnline } = require('./presenceHandler');
 
@@ -35,6 +36,14 @@ const callHandler = (io, socket) => {
           message: `missed a ${type} call`,
         });
 
+        pushService.sendToUser(recipientId, {
+          title: 'Missed Call',
+          body: `Missed a ${type} call from ${socket.user.fullname || socket.user.userId}`,
+          icon: socket.user.profilePic || '/favicon.svg',
+          tag: `missed-call-${missedCall._id}`,
+          data: { url: '/calls', type: 'CALL_MISSED' },
+        }).catch((err) => logger.warn(`[Call Handler] Push error: ${err.message}`));
+
         if (typeof callback === 'function') callback({ error: 'USER_OFFLINE', isOffline: true });
         return;
       }
@@ -56,6 +65,25 @@ const callHandler = (io, socket) => {
         },
         callType: type,
       });
+
+      // Dispatch high-priority Web Push notification for background/PWA
+      pushService.sendToUser(recipientId, {
+        title: `Incoming ${type === 'video' ? 'Video' : 'Audio'} Call`,
+        body: `${socket.user.fullname || socket.user.userId} is calling you on ShiftAura...`,
+        icon: socket.user.profilePic || '/favicon.svg',
+        tag: `call-${call._id}`,
+        urgency: 'high',
+        vibrate: [300, 200, 300, 200, 500],
+        data: {
+          url: `/calls?callId=${call._id}`,
+          callId: call._id.toString(),
+          type: 'CALL_INCOMING',
+        },
+        actions: [
+          { action: 'accept', title: 'Accept' },
+          { action: 'decline', title: 'Decline' },
+        ],
+      }).catch((err) => logger.warn(`[Call Handler] Incoming call push error: ${err.message}`));
 
       // Emit ringing back to caller
       socket.emit(SOCKET_EVENTS.CALL_RINGING, { callId: call._id });

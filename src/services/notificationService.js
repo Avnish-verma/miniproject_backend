@@ -1,4 +1,5 @@
 const Notification = require('../models/Notification');
+const pushService = require('./pushService');
 
 class NotificationService {
   async createNotification({ recipient, sender, type, referenceId = null, message = '' }) {
@@ -14,9 +15,38 @@ class NotificationService {
       message,
     });
 
-    return Notification.findById(notification._id)
+    const populated = await Notification.findById(notification._id)
       .populate('sender', 'userId fullname profilePic')
       .lean();
+
+    // 1. Realtime Socket emit if online
+    try {
+      const { getIO } = require('../sockets/socketServer');
+      const io = getIO();
+      if (io) {
+        io.to(`user:${recipient.toString()}`).emit('notification:new', populated);
+      }
+    } catch (e) {}
+
+    // 2. Web Push dispatch for background/offline delivery
+    try {
+      let targetUrl = '/notifications';
+      if (type === 'LIKE' || type === 'COMMENT') {
+        targetUrl = referenceId ? `/feed?post=${referenceId}` : '/feed';
+      } else if (type === 'FOLLOW') {
+        targetUrl = populated.sender?.userId ? `/profile?user=${populated.sender.userId}` : '/feed';
+      }
+
+      pushService.sendToUser(recipient, {
+        title: 'ShiftAura',
+        body: `${populated.sender?.fullname || 'Someone'} ${message || 'interacted with your profile'}`,
+        icon: populated.sender?.profilePic || '/favicon.svg',
+        tag: `notif-${notification._id}`,
+        data: { url: targetUrl, type },
+      }).catch(() => {});
+    } catch (e) {}
+
+    return populated;
   }
 
   async getUserNotifications(userId, { page = 1, limit = 30 }) {
