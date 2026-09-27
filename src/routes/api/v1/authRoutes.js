@@ -14,6 +14,7 @@ const {
 
 router.post('/register', authLimiter, validate(registerSchema), (req, res, next) => authController.register(req, res, next));
 router.post('/verify-otp', authLimiter, validate(verifyOtpSchema), (req, res, next) => authController.verifyOtp(req, res, next));
+router.post('/verify', authLimiter, validate(verifyOtpSchema), (req, res, next) => authController.verifyOtp(req, res, next));
 router.post('/login', authLimiter, validate(loginSchema), (req, res, next) => authController.login(req, res, next));
 router.post('/refresh-token', (req, res, next) => authController.refreshToken(req, res, next));
 router.post('/logout', protect, (req, res, next) => authController.logout(req, res, next));
