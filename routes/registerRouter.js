@@ -38,7 +38,7 @@ const handleVerify = async (req, res, next) => {
     }
 
     const result = await authService.verifyOtp({ userId, otp });
-    if (result.accessToken) {
+    if (result && result.accessToken) {
       res.cookie('token', result.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -50,9 +50,9 @@ const handleVerify = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'Email verified successfully',
-      token: result.accessToken,
-      accessToken: result.accessToken,
-      user: result.user,
+      token: result?.accessToken,
+      accessToken: result?.accessToken,
+      user: result?.user,
       data: result,
     });
   } catch (error) {

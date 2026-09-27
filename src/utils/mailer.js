@@ -13,6 +13,9 @@ if (env.EMAIL && env.PASS) {
       user: env.EMAIL,
       pass: env.PASS,
     },
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 5000,
   });
 } else {
   logger.warn('[Mailer] SMTP credentials not fully configured. Emails will be logged to console in development mode.');

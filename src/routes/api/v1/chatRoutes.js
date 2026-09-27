@@ -10,6 +10,10 @@ router.post('/conversations', (req, res, next) => chatController.getOrCreateConv
 router.post('/conversations/:targetId', (req, res, next) => chatController.getOrCreateConversation(req, res, next));
 router.get('/messages/:conversationId', (req, res, next) => chatController.getMessages(req, res, next));
 router.post('/messages/:conversationId', (req, res, next) => chatController.sendMessage(req, res, next));
+router.post('/messages', (req, res, next) => {
+  req.params.conversationId = req.params.conversationId || req.body.conversationId;
+  chatController.sendMessage(req, res, next);
+});
 router.put('/messages/:conversationId/read', (req, res, next) => chatController.markAsRead(req, res, next));
 
 module.exports = router;

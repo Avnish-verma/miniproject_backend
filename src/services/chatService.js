@@ -117,8 +117,9 @@ class ChatService {
     };
   }
 
-  async sendMessage(conversationId, senderId, { text = '', mediaUrl = '', mediaType = 'none', messageType = 'TEXT', sharedPostId = null, replyTo = null }) {
-    if (!text.trim() && !mediaUrl.trim() && !sharedPostId) {
+  async sendMessage(conversationId, senderId, { text = '', content = '', mediaUrl = '', mediaType = 'none', messageType = 'TEXT', sharedPostId = null, replyTo = null }) {
+    const messageText = (text || content || '').toString();
+    if (!messageText.trim() && !mediaUrl.trim() && !sharedPostId) {
       throw new ValidationError('Message must contain text, media, or shared content');
     }
 
@@ -150,7 +151,7 @@ class ChatService {
     const message = await Message.create({
       conversationId,
       sender: senderId,
-      text: text.trim(),
+      text: messageText.trim(),
       mediaUrl: mediaUrl.trim(),
       mediaType,
       messageType: resolvedMessageType,

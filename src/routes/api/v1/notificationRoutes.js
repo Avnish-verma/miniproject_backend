@@ -8,5 +8,6 @@ router.use(protect);
 router.get('/', (req, res, next) => notificationController.getNotifications(req, res, next));
 router.put('/:notificationId/read', (req, res, next) => notificationController.markAsRead(req, res, next));
 router.put('/read-all', (req, res, next) => notificationController.markAllAsRead(req, res, next));
+router.post('/read-all', (req, res, next) => notificationController.markAllAsRead(req, res, next));
 
 module.exports = router;

@@ -15,4 +15,7 @@ router.get('/upload-cover', protect, mediaController.getUploadSignature('covers'
 // Generate upload parameters for chat attachments
 router.get('/upload-chat', protect, mediaController.getUploadSignature('chat', 'chat'));
 
+// Generate upload parameters for stories
+router.get('/upload-story', protect, mediaController.getUploadSignature('stories', 'story'));
+
 module.exports = router;
