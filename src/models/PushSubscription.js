@@ -33,8 +33,6 @@ const pushSubscriptionSchema = new mongoose.Schema(
   }
 );
 
-pushSubscriptionSchema.index({ user: 1 });
-
 const PushSubscription =
   mongoose.models.PushSubscription || mongoose.model('PushSubscription', pushSubscriptionSchema);
 

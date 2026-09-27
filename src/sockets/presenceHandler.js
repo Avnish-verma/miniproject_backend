@@ -19,6 +19,11 @@ const presenceHandler = (io, socket) => {
     _id: userId,
   });
 
+  // Sync current online roster directly to the newly connected socket
+  socket.emit('presence:sync', {
+    onlineUserIds: Array.from(onlineUsers.keys()),
+  });
+
   logger.info(`[Presence] User ${socket.user.userId} connected (Socket: ${socket.id}). Online count: ${onlineUsers.size}`);
 
   socket.on(SOCKET_EVENTS.DISCONNECT, () => {

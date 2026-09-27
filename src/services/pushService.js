@@ -22,6 +22,10 @@ class PushService {
     return env.VAPID_PUBLIC_KEY;
   }
 
+  getPublicKey() {
+    return this.getVapidPublicKey();
+  }
+
   async subscribe(userId, subscriptionData, userAgent = '') {
     if (!subscriptionData || !subscriptionData.endpoint || !subscriptionData.keys) {
       throw new Error('Invalid subscription data structure');

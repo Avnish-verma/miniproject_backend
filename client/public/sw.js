@@ -53,7 +53,17 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(payload.title || 'ShiftAura', notificationOptions)
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Deduplication: If the app window is actively focused and open,
+      // the real-time Socket.IO handler updates the UI directly.
+      const isAppFocused = clientList.some((client) => client.focused);
+
+      if (isAppFocused) {
+        return;
+      }
+
+      return self.registration.showNotification(payload.title || 'ShiftAura', notificationOptions);
+    })
   );
 });
 

@@ -17,6 +17,10 @@ const storySchema = new mongoose.Schema(
       enum: ['image', 'video', 'text'],
       default: 'image',
     },
+    duration: {
+      type: Number,
+      default: 5,
+    },
     caption: {
       type: String,
       default: '',

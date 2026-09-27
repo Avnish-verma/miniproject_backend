@@ -139,7 +139,7 @@ class UserService {
     return { users, total, page, limit };
   }
 
-  async getUserFollowers(targetUsernameOrId, { page = 1, limit = 20 }) {
+  async getUserFollowers(targetUsernameOrId, { page = 1, limit = 20 } = {}) {
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(targetUsernameOrId);
     const query = isObjectId ? { _id: targetUsernameOrId } : { userId: targetUsernameOrId.toLowerCase() };
 
@@ -161,7 +161,7 @@ class UserService {
     return { followers, total, page, limit };
   }
 
-  async getUserFollowing(targetUsernameOrId, { page = 1, limit = 20 }) {
+  async getUserFollowing(targetUsernameOrId, { page = 1, limit = 20 } = {}) {
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(targetUsernameOrId);
     const query = isObjectId ? { _id: targetUsernameOrId } : { userId: targetUsernameOrId.toLowerCase() };
 

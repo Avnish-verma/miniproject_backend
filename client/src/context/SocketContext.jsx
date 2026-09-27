@@ -50,6 +50,12 @@ export const SocketProvider = ({ children }) => {
       console.log('[Socket] Disconnected');
     });
 
+    socketInstance.on('presence:sync', ({ onlineUserIds }) => {
+      if (Array.isArray(onlineUserIds)) {
+        setOnlineUserIds(new Set(onlineUserIds));
+      }
+    });
+
     socketInstance.on('user:online', ({ _id }) => {
       setOnlineUserIds((prev) => new Set([...prev, _id]));
     });
