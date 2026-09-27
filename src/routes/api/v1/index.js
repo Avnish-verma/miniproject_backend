@@ -27,7 +27,7 @@ router.use('/stories', storyRoutes);
 router.get('/health', (_req, res) => {
   res.status(200).json({
     status: 'online',
-    platform: 'NOVA Social Communication Platform',
+    platform: 'ShiftAura Social Communication Platform',
     timestamp: new Date().toISOString(),
   });
 });

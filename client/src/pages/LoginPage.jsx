@@ -55,17 +55,17 @@ export default function LoginPage({ onNavigateRegister }) {
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <div className="w-10 h-10 mx-auto rounded-[8px] bg-[#111111] dark:bg-[#F5F5F5] text-[#FAFAF8] dark:text-[#111111] flex items-center justify-center shadow-sm">
-            <span className="font-extrabold text-[18px] tracking-tight">N</span>
+            <span className="font-extrabold text-[18px] tracking-tight">S</span>
           </div>
           <div>
             <div className="flex items-center justify-center gap-1.5">
               <h1 className="text-[20px] font-bold tracking-tight text-[#111111] dark:text-[#F5F5F5]">
-                Sign in to NOVA
+                Sign in to ShiftAura
               </h1>
               <span className="w-1.5 h-1.5 rounded-full bg-[#FF5C35] dark:bg-[#FF6845]" />
             </div>
             <p className="text-[12px] text-[#6B6B6B] dark:text-[#A0A0A0] mt-0.5">
-              Real-time social communication platform
+              ShiftAura Social Communication Platform
             </p>
           </div>
         </div>

@@ -190,7 +190,7 @@ export default function PostCard({
               className="flex items-center gap-1.5 truncate cursor-pointer group"
             >
               <span className="font-bold text-[14px] text-[#111111] dark:text-[#F5F5F5] truncate group-hover:underline">
-                {post.postedBy?.fullname || 'NOVA Member'}
+                {post.postedBy?.fullname || 'ShiftAura Member'}
               </span>
               <span className="text-[13px] text-[#6B6B6B] dark:text-[#A0A0A0] truncate">
                 @{post.postedBy?.userId || 'user'}
@@ -398,7 +398,7 @@ export default function PostCard({
                         <div className="flex-1 bg-[#F4F3F0]/60 dark:bg-[#1C1C1C]/60 rounded-[9px] p-2.5 border border-[#E7E5E2]/40 dark:border-[#292929]/40 relative">
                           <div className="flex items-center justify-between gap-1.5">
                             <div className="flex items-center gap-1.5 font-semibold text-[12px] text-[#111111] dark:text-[#F5F5F5]">
-                              <span>{author?.fullname || 'NOVA Member'}</span>
+                              <span>{author?.fullname || 'ShiftAura Member'}</span>
                               <span className="text-[#929292] font-normal">
                                 @{author?.userId}
                               </span>

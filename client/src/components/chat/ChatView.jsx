@@ -461,7 +461,7 @@ export default function ChatView({ onSelectPost }) {
                                   />
                                   <div className="min-w-0">
                                     <p className="text-[12px] font-bold text-[#111111] dark:text-[#F5F5F5] truncate">
-                                      {m.sharedPostId.postedBy?.fullname || 'NOVA Member'}
+                                      {m.sharedPostId.postedBy?.fullname || 'ShiftAura Member'}
                                     </p>
                                     <p className="text-[10px] text-[#6B6B6B] dark:text-[#A0A0A0] truncate">
                                       @{m.sharedPostId.postedBy?.userId || 'user'}

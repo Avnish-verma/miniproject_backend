@@ -14,7 +14,11 @@ const env = {
   CLOUDINARY_API_KEY: (process.env.CLOUDINARY_API_KEY || '').trim(),
   CLOUDINARY_API_SECRET: (process.env.CLOUDINARY_API_SECRET || '').trim(),
   
-  // Email / SMTP
+  // Resend Email Service
+  RESEND_API_KEY: (process.env.RESEND_API_KEY || '').trim(),
+  RESEND_FROM: (process.env.RESEND_FROM || 'ShiftAura <noreply@social.shiftaura.in>').trim(),
+
+  // Email / SMTP Fallback
   EMAIL: process.env.EMAIL || '',
   PASS: process.env.PASS || '',
   SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',

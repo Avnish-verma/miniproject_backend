@@ -51,7 +51,7 @@ if (fs.existsSync(clientDistPath)) {
 app.get('/api-status', (_req, res) => {
   res.status(200).json({
     status: 'online',
-    platform: 'NOVA Social Communication Platform',
+    platform: 'ShiftAura Social Communication Platform',
     version: '1.0.0',
     documentation: '/api/v1/health',
   });

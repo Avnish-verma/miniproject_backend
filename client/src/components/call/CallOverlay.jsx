@@ -140,7 +140,7 @@ export default function CallOverlay() {
             />
             <div>
               <h3 className="font-bold text-[15px] text-[#F5F5F5] leading-tight">
-                {activeCall?.recipientUser?.fullname || 'NOVA Call'}
+                {activeCall?.recipientUser?.fullname || 'ShiftAura Call'}
               </h3>
               <p className="text-[12px] text-[#A0A0A0] flex items-center gap-1.5 mt-0.5 font-mono">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#38A878] animate-pulse" />

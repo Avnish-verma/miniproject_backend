@@ -17,7 +17,7 @@ async function startServer() {
 
     server.listen(env.PORT, () => {
       logger.info(`===================================================`);
-      logger.info(`🚀 NOVA Platform Server active on port: ${env.PORT}`);
+      logger.info(`🚀 ShiftAura Social Communication Platform Server active on port: ${env.PORT}`);
       logger.info(`📡 Socket.IO Real-Time & WebRTC Signaling Ready`);
       logger.info(`🌐 Environment: ${env.NODE_ENV}`);
       logger.info(`===================================================`);

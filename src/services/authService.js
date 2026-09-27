@@ -69,14 +69,14 @@ class AuthService {
 
     // Send email with OTP
     const htmlContent = `
-      <p>Thank you for registering on <strong>NOVA</strong>.</p>
+      <p>Thank you for registering on <strong>ShiftAura Social Communication Platform</strong>.</p>
       <p>Your one-time verification code is:</p>
       <div style="font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #6366F1; margin: 16px 0;">
         ${otp}
       </div>
       <p style="font-size: 13px; color: #9CA3AF;">This code will expire in 15 minutes.</p>
     `;
-    await sendMail(newUser.fullname, newUser.emailId, 'NOVA Verification Code', htmlContent);
+    await sendMail(newUser.fullname, newUser.emailId, 'ShiftAura Verification Code', htmlContent);
 
     return {
       userId: newUser.userId,
@@ -259,7 +259,7 @@ class AuthService {
 
     const resetUrl = `${env.CLIENT_URL}/reset-password?token=${resetToken}`;
     const htmlContent = `
-      <p>We received a request to reset the password for your NOVA account.</p>
+      <p>We received a request to reset the password for your <strong>ShiftAura Social Communication Platform</strong> account.</p>
       <p>Click the link below to securely set a new password:</p>
       <div style="margin: 20px 0;">
         <a href="${resetUrl}" style="background-color: #6366F1; color: #FFFFFF; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
@@ -269,7 +269,7 @@ class AuthService {
       <p style="font-size: 12px; color: #9CA3AF;">This link is valid for 10 minutes. If you did not request this, ignore this email.</p>
     `;
 
-    await sendMail(user.fullname, user.emailId, 'NOVA Password Reset Request', htmlContent);
+    await sendMail(user.fullname, user.emailId, 'ShiftAura Password Reset Request', htmlContent);
 
     return { message: 'If an account exists, a password reset link has been dispatched.' };
   }

@@ -194,7 +194,7 @@ export default function ProfilePage({ targetUserId, onSelectPost }) {
     setIsSavingProfile(true);
     setEditError('');
     try {
-      const finalFullname = fullname.trim() || profile?.fullname || currentUser?.fullname || 'NOVA Member';
+      const finalFullname = fullname.trim() || profile?.fullname || currentUser?.fullname || 'ShiftAura Member';
       const res = await api.put('/api/v1/users/profile', {
         fullname: finalFullname,
         bio: bio.trim(),

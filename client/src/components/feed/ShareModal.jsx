@@ -174,7 +174,7 @@ export default function ShareModal({ isOpen, onClose, post }) {
                     />
                     <div className="min-w-0">
                       <p className="font-semibold text-[13px] text-[#111111] dark:text-[#F5F5F5] truncate">
-                        {peer?.fullname || 'NOVA Member'}
+                        {peer?.fullname || 'ShiftAura Member'}
                       </p>
                       <p className="text-[11px] text-[#6B6B6B] dark:text-[#A0A0A0] truncate">
                         @{peer?.userId}

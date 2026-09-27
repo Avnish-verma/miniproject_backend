@@ -74,11 +74,11 @@ function AppContent() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAF8] dark:bg-[#0D0D0D] text-[#111111] dark:text-[#F5F5F5] gap-3">
         <div className="w-10 h-10 rounded-[8px] bg-[#111111] dark:bg-[#F5F5F5] text-[#FAFAF8] dark:text-[#111111] flex items-center justify-center shadow-sm">
-          <span className="font-extrabold text-[18px] tracking-tight">N</span>
+          <span className="font-extrabold text-[18px] tracking-tight">S</span>
         </div>
         <div className="flex items-center gap-2 text-[12px] text-[#6B6B6B] dark:text-[#A0A0A0]">
           <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FF5C35] dark:text-[#FF6845]" />
-          <span>Starting NOVA...</span>
+          <span>Starting ShiftAura...</span>
         </div>
       </div>
     );
