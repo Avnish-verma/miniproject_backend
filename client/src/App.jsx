@@ -38,6 +38,7 @@ function AppContent() {
   const [viewingUserId, setViewingUserId] = useState(initialRoute.userId);
   const [focusedPostId, setFocusedPostId] = useState(initialRoute.postId);
   const [newPost, setNewPost] = useState(null);
+  const [activeChatUserId, setActiveChatUserId] = useState(null);
 
   // Sync state with browser back/forward buttons
   useEffect(() => {
@@ -92,8 +93,6 @@ function AppContent() {
       <RegisterPage onNavigateLogin={() => setAuthView('login')} />
     );
   }
-
-  const [activeChatUserId, setActiveChatUserId] = useState(null);
 
   const handleStartChatWithUser = (targetUserId) => {
     setActiveChatUserId(targetUserId);
