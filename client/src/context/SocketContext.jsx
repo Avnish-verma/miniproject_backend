@@ -20,7 +20,19 @@ export const SocketProvider = ({ children }) => {
       return;
     }
 
-    const socketUrl = window.location.origin;
+    const getSocketUrl = () => {
+      if (import.meta.env.VITE_SOCKET_URL) return import.meta.env.VITE_SOCKET_URL;
+      if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+      if (typeof window !== 'undefined') {
+        const { hostname, origin } = window.location;
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          return origin;
+        }
+      }
+      return 'https://miniproject-backend-rdei.onrender.com';
+    };
+
+    const socketUrl = getSocketUrl();
     const socketInstance = io(socketUrl, {
       auth: { token },
       transports: ['websocket', 'polling'],

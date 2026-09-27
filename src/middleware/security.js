@@ -10,14 +10,22 @@ const allowedOrigins = [
   'http://127.0.0.1:5501',
   'http://127.0.0.1:3000',
   'https://avnilive.netlify.app',
+  'https://miniprojectbackend-zeta.vercel.app',
   env.CLIENT_URL,
 ].filter(Boolean);
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true;
+  if (process.env.NODE_ENV !== 'production') return true;
+  if (allowedOrigins.indexOf(origin) !== -1) return true;
+  if (origin.endsWith('.vercel.app') || origin.endsWith('.netlify.app')) return true;
+  return false;
+};
 
 const corsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+    if (isOriginAllowed(origin)) {
       return callback(null, true);
     }
     return callback(new Error('CORS policy: Not allowed by CORS'));
@@ -55,4 +63,4 @@ const securityMiddleware = (app) => {
   app.use(noSqlSanitizer);
 };
 
-module.exports = { securityMiddleware, corsOptions, allowedOrigins };
+module.exports = { securityMiddleware, corsOptions, allowedOrigins, isOriginAllowed };

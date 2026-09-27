@@ -6,7 +6,7 @@ const logger = require('../utils/logger');
 const { presenceHandler } = require('./presenceHandler');
 const chatHandler = require('./chatHandler');
 const callHandler = require('./callHandler');
-const { allowedOrigins } = require('../middleware/security');
+const { allowedOrigins, isOriginAllowed } = require('../middleware/security');
 
 let ioInstance = null;
 
@@ -14,8 +14,7 @@ const initSocketServer = (httpServer) => {
   const io = new Server(httpServer, {
     cors: {
       origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+        if (isOriginAllowed(origin)) {
           return callback(null, true);
         }
         return callback(new Error('CORS policy: Not allowed by CORS'));
