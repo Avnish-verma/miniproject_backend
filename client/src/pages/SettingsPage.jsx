@@ -19,6 +19,11 @@ import {
   Smartphone,
   Info,
   Download,
+  MessageSquare,
+  PhoneCall,
+  Heart,
+  Vibrate,
+  AlertCircle,
 } from 'lucide-react';
 import Button from '../components/common/Button';
 import api from '../services/api';
@@ -34,18 +39,56 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // Sound settings
+  // Granular Notification settings
+  const [notifMessages, setNotifMessages] = useState(
+    () => localStorage.getItem('shiftaura_notif_messages') !== 'false'
+  );
+  const [notifCalls, setNotifCalls] = useState(
+    () => localStorage.getItem('shiftaura_notif_calls') !== 'false'
+  );
+  const [notifSocial, setNotifSocial] = useState(
+    () => localStorage.getItem('shiftaura_notif_social') !== 'false'
+  );
   const [soundEnabled, setSoundEnabled] = useState(
     () => localStorage.getItem('shiftaura_sound_enabled') !== 'false'
   );
+  const [vibrationEnabled, setVibrationEnabled] = useState(
+    () => localStorage.getItem('shiftaura_vibration_enabled') !== 'false'
+  );
+
+  const handleToggleMessages = () => {
+    const next = !notifMessages;
+    setNotifMessages(next);
+    localStorage.setItem('shiftaura_notif_messages', String(next));
+    if (toast?.info) toast.info(next ? 'Message alerts enabled' : 'Message alerts muted');
+  };
+
+  const handleToggleCalls = () => {
+    const next = !notifCalls;
+    setNotifCalls(next);
+    localStorage.setItem('shiftaura_notif_calls', String(next));
+    if (toast?.info) toast.info(next ? 'Call alerts enabled' : 'Call alerts muted');
+  };
+
+  const handleToggleSocial = () => {
+    const next = !notifSocial;
+    setNotifSocial(next);
+    localStorage.setItem('shiftaura_notif_social', String(next));
+    if (toast?.info) toast.info(next ? 'Social notifications enabled' : 'Social notifications muted');
+  };
 
   const handleToggleSound = () => {
     const next = !soundEnabled;
     setSoundEnabled(next);
     localStorage.setItem('shiftaura_sound_enabled', String(next));
-    if (toast?.info) {
-      toast.info(next ? 'Sound effects enabled' : 'Sound effects muted');
-    }
+    if (toast?.info) toast.info(next ? 'Notification sounds enabled' : 'Notification sounds muted');
+  };
+
+  const handleToggleVibration = () => {
+    const next = !vibrationEnabled;
+    setVibrationEnabled(next);
+    localStorage.setItem('shiftaura_vibration_enabled', String(next));
+    if (toast?.info) toast.info(next ? 'Haptic vibration enabled' : 'Haptic vibration disabled');
   };
 
   const handleTogglePrivacy = async () => {
@@ -169,20 +212,39 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* 3. Notifications & Push Section */}
-      <div className="bg-[#FFFFFF] dark:bg-[#151515] border border-[#E7E5E2] dark:border-[#292929] rounded-[14px] p-5 space-y-3 shadow-xs">
-        <div className="flex items-center gap-2 text-[#111111] dark:text-[#F5F5F5] font-semibold text-[14px]">
-          <Bell className="w-4 h-4 text-[#FF5C35] stroke-[2px]" />
-          <span>Web Push Notifications</span>
+      {/* 3. Notifications Section */}
+      <div className="bg-[#FFFFFF] dark:bg-[#151515] border border-[#E7E5E2] dark:border-[#292929] rounded-[14px] p-5 space-y-4 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2 text-[#111111] dark:text-[#F5F5F5] font-semibold text-[14px]">
+            <Bell className="w-4 h-4 text-[#FF5C35] stroke-[2px]" />
+            <span>Notifications</span>
+          </div>
+
+          {/* Status Display: ● Enabled or ○ Disabled */}
+          <div className="flex items-center gap-2">
+            <span className="text-[12px] text-[#6B6B6B] dark:text-[#A0A0A0]">Push notifications:</span>
+            {isSubscribed && permission === 'granted' ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#16845B]/15 text-[#16845B] dark:text-[#38A878] text-[11px] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#16845B] dark:bg-[#38A878]" />
+                ● Enabled
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#808080]/15 text-[#808080] text-[11px] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#808080]" />
+                ○ Disabled
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center justify-between pt-1">
+        {/* Master Push Toggle Button */}
+        <div className="flex items-center justify-between pt-1 pb-2 border-b border-[#E7E5E2]/60 dark:border-[#292929]/60">
           <div className="max-w-[75%]">
             <h4 className="font-semibold text-[13px] text-[#111111] dark:text-[#F5F5F5]">
-              Background Notifications
+              Background Web Push Service
             </h4>
             <p className="text-[12px] text-[#6B6B6B] dark:text-[#A0A0A0] mt-0.5 leading-relaxed">
-              Receive notifications for incoming calls, direct messages, and interactions even when the app is in the background.
+              Allow ShiftAura to wake your device for calls and messages when the app is in the background or closed.
             </p>
           </div>
 
@@ -190,7 +252,7 @@ export default function SettingsPage() {
             <Button
               variant={isSubscribed ? 'outline' : 'primary'}
               size="sm"
-              disabled={pushPending}
+              disabled={pushPending || permission === 'denied'}
               onClick={handleTogglePush}
               className={isSubscribed ? '' : 'bg-[#FF5C35] hover:bg-[#FF481F] text-white'}
             >
@@ -200,41 +262,141 @@ export default function SettingsPage() {
             <span className="text-[12px] text-[#808080]">Not supported on this browser</span>
           )}
         </div>
-      </div>
 
-      {/* 4. Sounds Section */}
-      <div className="bg-[#FFFFFF] dark:bg-[#151515] border border-[#E7E5E2] dark:border-[#292929] rounded-[14px] p-5 space-y-3 shadow-xs">
-        <div className="flex items-center gap-2 text-[#111111] dark:text-[#F5F5F5] font-semibold text-[14px]">
-          <Volume2 className="w-4 h-4 text-[#FF5C35] stroke-[2px]" />
-          <span>Audio & Ringtone</span>
-        </div>
-
-        <div className="flex items-center justify-between pt-1">
-          <div>
-            <h4 className="font-semibold text-[13px] text-[#111111] dark:text-[#F5F5F5]">
-              Call Ringtones & Audio Tones
-            </h4>
-            <p className="text-[12px] text-[#6B6B6B] dark:text-[#A0A0A0] mt-0.5">
-              Play sound for incoming calls and audio feedback.
+        {/* Permission Denied Explanation Banner */}
+        {permission === 'denied' && (
+          <div className="p-3.5 rounded-[12px] bg-[#D64545]/10 border border-[#D64545]/20 text-[12px] text-[#D64545] dark:text-[#E05252] space-y-1.5 animate-in fade-in duration-200">
+            <div className="font-bold flex items-center gap-1.5 text-[13px]">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>Push notifications are blocked in your browser</span>
+            </div>
+            <p className="leading-relaxed text-[#4A4A4A] dark:text-[#D0D0D0] text-[12px]">
+              Browser security prevents websites from asking for permission once blocked. To receive call and message alerts:
             </p>
+            <ol className="list-decimal list-inside space-y-1 text-[11.5px] text-[#5A5A5A] dark:text-[#B0B0B0] pl-1">
+              <li>Click the lock or site settings icon next to <strong>https://social.shiftaura.in</strong> in your address bar.</li>
+              <li>Find <strong>Notifications</strong> and change it from <em>Block</em> to <em>Allow</em>.</li>
+              <li>Reload ShiftAura to complete setup.</li>
+            </ol>
+          </div>
+        )}
+
+        {/* Granular Sub-Toggles Hierarchy */}
+        <div className="space-y-3.5 pt-1 text-[13px]">
+          {/* 1. Messages */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <MessageSquare className="w-4 h-4 text-[#FF5C35] stroke-[1.75px]" />
+              <div>
+                <h5 className="font-semibold text-[#111111] dark:text-[#F5F5F5]">Messages</h5>
+                <p className="text-[11.5px] text-[#6B6B6B] dark:text-[#A0A0A0]">Direct message previews and chat alerts</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={notifMessages}
+              onClick={handleToggleMessages}
+              className={`w-10 h-5 rounded-full transition-colors duration-150 relative focus:outline-none ${
+                notifMessages ? 'bg-[#FF5C35]' : 'bg-[#E7E5E2] dark:bg-[#292929]'
+              }`}
+              aria-label="Toggle message notifications"
+            >
+              <span className={`block w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-150 ${notifMessages ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
           </div>
 
-          <button
-            type="button"
-            role="switch"
-            aria-checked={soundEnabled}
-            onClick={handleToggleSound}
-            className={`w-11 h-6 rounded-full transition-colors duration-150 relative focus:outline-none ${
-              soundEnabled ? 'bg-[#FF5C35]' : 'bg-[#E7E5E2] dark:bg-[#292929]'
-            }`}
-            aria-label="Toggle sound"
-          >
-            <span
-              className={`block w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-150 ${
-                soundEnabled ? 'translate-x-5' : 'translate-x-0.5'
+          {/* 2. Calls */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <PhoneCall className="w-4 h-4 text-[#FF5C35] stroke-[1.75px]" />
+              <div>
+                <h5 className="font-semibold text-[#111111] dark:text-[#F5F5F5]">Calls</h5>
+                <p className="text-[11.5px] text-[#6B6B6B] dark:text-[#A0A0A0]">Incoming audio/video calls and missed call alerts</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={notifCalls}
+              onClick={handleToggleCalls}
+              className={`w-10 h-5 rounded-full transition-colors duration-150 relative focus:outline-none ${
+                notifCalls ? 'bg-[#FF5C35]' : 'bg-[#E7E5E2] dark:bg-[#292929]'
               }`}
-            />
-          </button>
+              aria-label="Toggle call notifications"
+            >
+              <span className={`block w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-150 ${notifCalls ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+
+          {/* 3. Social activity */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Heart className="w-4 h-4 text-[#FF5C35] stroke-[1.75px]" />
+              <div>
+                <h5 className="font-semibold text-[#111111] dark:text-[#F5F5F5]">Social activity</h5>
+                <p className="text-[11.5px] text-[#6B6B6B] dark:text-[#A0A0A0]">Likes, comments, mentions, and new followers</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={notifSocial}
+              onClick={handleToggleSocial}
+              className={`w-10 h-5 rounded-full transition-colors duration-150 relative focus:outline-none ${
+                notifSocial ? 'bg-[#FF5C35]' : 'bg-[#E7E5E2] dark:bg-[#292929]'
+              }`}
+              aria-label="Toggle social activity notifications"
+            >
+              <span className={`block w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-150 ${notifSocial ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+
+          {/* 4. Sounds */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Volume2 className="w-4 h-4 text-[#FF5C35] stroke-[1.75px]" />
+              <div>
+                <h5 className="font-semibold text-[#111111] dark:text-[#F5F5F5]">Sounds</h5>
+                <p className="text-[11.5px] text-[#6B6B6B] dark:text-[#A0A0A0]">Audio chimes for calls and message alerts</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={soundEnabled}
+              onClick={handleToggleSound}
+              className={`w-10 h-5 rounded-full transition-colors duration-150 relative focus:outline-none ${
+                soundEnabled ? 'bg-[#FF5C35]' : 'bg-[#E7E5E2] dark:bg-[#292929]'
+              }`}
+              aria-label="Toggle notification sounds"
+            >
+              <span className={`block w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-150 ${soundEnabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+
+          {/* 5. Vibration */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Vibrate className="w-4 h-4 text-[#FF5C35] stroke-[1.75px]" />
+              <div>
+                <h5 className="font-semibold text-[#111111] dark:text-[#F5F5F5]">Vibration</h5>
+                <p className="text-[11.5px] text-[#6B6B6B] dark:text-[#A0A0A0]">Haptic feedback pattern for calls and alerts</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={vibrationEnabled}
+              onClick={handleToggleVibration}
+              className={`w-10 h-5 rounded-full transition-colors duration-150 relative focus:outline-none ${
+                vibrationEnabled ? 'bg-[#FF5C35]' : 'bg-[#E7E5E2] dark:bg-[#292929]'
+              }`}
+              aria-label="Toggle vibration feedback"
+            >
+              <span className={`block w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-150 ${vibrationEnabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
         </div>
       </div>
 

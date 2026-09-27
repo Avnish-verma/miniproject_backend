@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
+import BrandLockup from '../common/BrandLockup';
 import api from '../../services/api';
 
 export default function AppLayout({ children, currentTab, setCurrentTab, onOpenComposer }) {
@@ -168,19 +169,13 @@ export default function AppLayout({ children, currentTab, setCurrentTab, onOpenC
       <aside className="hidden md:flex flex-col justify-between w-[240px] h-screen sticky top-0 border-r border-[#E7E5E2] dark:border-[#292929] px-4 py-5 select-none shrink-0 z-30 bg-[#FAFAF8] dark:bg-[#0D0D0D]">
         <div className="flex flex-col w-full">
           {/* Brand Mark */}
-          <div
-            onClick={() => setCurrentTab('feed')}
-            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer mb-5 group"
-          >
-            <div className="w-7 h-7 rounded-[8px] bg-[#111111] dark:bg-[#F5F5F5] text-[#FAFAF8] dark:text-[#111111] flex items-center justify-center font-bold text-xs tracking-tighter">
-              S
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-[18px] tracking-tight text-[#111111] dark:text-[#F5F5F5]">
-                ShiftAura
-              </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#FF5C35] dark:bg-[#FF6845]" />
-            </div>
+          <div className="px-1.5 py-1 mb-5">
+            <BrandLockup
+              size="sm"
+              layout="horizontal"
+              showSubtitle={true}
+              onClick={() => setCurrentTab('feed')}
+            />
           </div>
 
           {/* Group 1: Home, Discover, Create */}
@@ -250,18 +245,11 @@ export default function AppLayout({ children, currentTab, setCurrentTab, onOpenC
       <main className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
         {/* Mobile Top Header (h-52px) */}
         <div className="md:hidden h-[52px] border-b border-[#E7E5E2] dark:border-[#292929] flex items-center justify-between px-4 sticky top-0 bg-[#FAFAF8]/95 dark:bg-[#0D0D0D]/95 backdrop-blur-md z-30">
-          <div
-            className="flex items-center gap-2 cursor-pointer"
+          <BrandLockup
+            size="sm"
+            showSubtitle={false}
             onClick={() => setCurrentTab('feed')}
-          >
-            <div className="w-6 h-6 rounded-[6px] bg-[#111111] dark:bg-[#F5F5F5] text-[#FAFAF8] dark:text-[#111111] flex items-center justify-center font-bold text-xs">
-              S
-            </div>
-            <span className="font-bold text-[16px] tracking-tight text-[#111111] dark:text-[#F5F5F5]">
-              ShiftAura
-            </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FF5C35] dark:bg-[#FF6845]" />
-          </div>
+          />
 
           <div className="flex items-center gap-1">
             <button

@@ -37,13 +37,14 @@ class NotificationService {
         targetUrl = populated.sender?.userId ? `/profile?user=${populated.sender.userId}` : '/feed';
       }
 
-      pushService.sendToUser(recipient, {
-        title: 'ShiftAura',
-        body: `${populated.sender?.fullname || 'Someone'} ${message || 'interacted with your profile'}`,
-        icon: populated.sender?.profilePic || '/favicon.svg',
-        tag: `notif-${notification._id}`,
-        data: { url: targetUrl, type },
-      }).catch(() => {});
+        const senderAvatar = populated.sender?.profilePic?.url || '/icon-192.png';
+        pushService.sendToUser(recipient, {
+          title: 'ShiftAura',
+          body: `${populated.sender?.fullname || 'Someone'} ${message || 'interacted with your profile'}`,
+          icon: senderAvatar,
+          tag: `notif-${notification._id}`,
+          data: { url: targetUrl, type },
+        }).catch(() => {});
     } catch (e) {}
 
     return populated;

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ArrowRight, CheckCircle2, ArrowLeft } from 'lucide-react';
 import Button from '../components/common/Button';
+import BrandLockup from '../components/common/BrandLockup';
 
 export default function RegisterPage({ onNavigateLogin }) {
   const { register, verifyOtp } = useAuth();
@@ -68,23 +69,13 @@ export default function RegisterPage({ onNavigateLogin }) {
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#FAFAF8] dark:bg-[#0D0D0D] text-[#111111] dark:text-[#F5F5F5]">
       <div className="w-full max-w-sm bg-[#FFFFFF] dark:bg-[#151515] border border-[#E7E5E2] dark:border-[#292929] rounded-[14px] p-7 shadow-sm space-y-6">
         {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="w-10 h-10 mx-auto rounded-[8px] bg-[#111111] dark:bg-[#F5F5F5] text-[#FAFAF8] dark:text-[#111111] flex items-center justify-center shadow-sm">
-            <span className="font-extrabold text-[18px] tracking-tight">S</span>
-          </div>
-          <div>
-            <div className="flex items-center justify-center gap-1.5">
-              <h1 className="text-[20px] font-bold tracking-tight text-[#111111] dark:text-[#F5F5F5]">
-                {step === 1 ? 'Join ShiftAura' : 'Verify Email'}
-              </h1>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#FF5C35] dark:bg-[#FF6845]" />
-            </div>
-            <p className="text-[12px] text-[#6B6B6B] dark:text-[#A0A0A0] mt-0.5">
-              {step === 1
-                ? 'Create your privacy-first social profile'
-                : `Enter the code sent to ${emailId}`}
-            </p>
-          </div>
+        <div className="text-center space-y-1">
+          <BrandLockup size="lg" layout="vertical" />
+          <h2 className="text-[13px] font-medium text-[#6B6B6B] dark:text-[#A0A0A0] pt-2">
+            {step === 1
+              ? 'Create your privacy-first social profile'
+              : `Enter the code sent to ${emailId}`}
+          </h2>
         </div>
 
         {error && (

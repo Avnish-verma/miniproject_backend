@@ -23,22 +23,28 @@ import CallOverlay from './components/call/CallOverlay';
 import OfflineBanner from './components/common/OfflineBanner';
 import InstallPromptBanner from './components/common/InstallPromptBanner';
 import NotificationPermissionModal from './components/notifications/NotificationPermissionModal';
+import BrandLockup from './components/common/BrandLockup';
 import { Loader2 } from 'lucide-react';
 
 const getRouteFromLocation = () => {
-  if (typeof window === 'undefined') return { tab: 'feed', userId: null, postId: null };
+  if (typeof window === 'undefined') {
+    return { tab: 'feed', userId: null, postId: null, conversationId: null, callId: null, autoAccept: false };
+  }
   const rawPath = window.location.pathname.replace(/^\/+/, '').split('/')[0];
   const params = new URLSearchParams(window.location.search);
   const postId = params.get('post') || null;
   const userId = params.get('user') || null;
+  const conversationId = params.get('conversationId') || null;
+  const callId = params.get('callId') || null;
+  const autoAccept = params.get('autoAccept') === 'true';
 
   if (rawPath === 'reset-password' || params.has('token')) {
-    return { tab: 'reset-password', userId: null, postId: null };
+    return { tab: 'reset-password', userId: null, postId: null, conversationId: null, callId: null, autoAccept: false };
   }
 
   const validTabs = ['feed', 'chat', 'calls', 'discover', 'notifications', 'profile', 'settings'];
   const tab = validTabs.includes(rawPath) ? rawPath : 'feed';
-  return { tab, userId, postId };
+  return { tab, userId, postId, conversationId, callId, autoAccept };
 };
 
 function AppContent() {
@@ -51,6 +57,7 @@ function AppContent() {
   const [focusedPostId, setFocusedPostId] = useState(initialRoute.postId);
   const [newPost, setNewPost] = useState(null);
   const [activeChatUserId, setActiveChatUserId] = useState(null);
+  const [activeConversationId, setActiveConversationId] = useState(initialRoute.conversationId);
 
   // Sync state with browser back/forward buttons
   useEffect(() => {
@@ -59,32 +66,36 @@ function AppContent() {
       setCurrentTab(route.tab);
       setViewingUserId(route.userId);
       setFocusedPostId(route.postId);
+      setActiveConversationId(route.conversationId);
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  const navigateTo = (tab, { userId = null, postId = null, replace = false } = {}) => {
+  const navigateTo = (tab, { userId = null, postId = null, conversationId = null, replace = false } = {}) => {
     setCurrentTab(tab);
     setViewingUserId(userId);
     setFocusedPostId(postId);
+    setActiveConversationId(conversationId);
 
     let path = tab === 'feed' && !postId ? '/feed' : `/${tab}`;
     const params = new URLSearchParams();
     if (postId) params.set('post', postId);
     if (userId) params.set('user', userId);
+    if (conversationId) params.set('conversationId', conversationId);
     const qs = params.toString();
     const fullUrl = qs ? `${path}?${qs}` : path;
 
     if (replace) {
-      window.history.replaceState({ tab, userId, postId }, '', fullUrl);
+      window.history.replaceState({ tab, userId, postId, conversationId }, '', fullUrl);
     } else {
-      window.history.pushState({ tab, userId, postId }, '', fullUrl);
+      window.history.pushState({ tab, userId, postId, conversationId }, '', fullUrl);
     }
   };
 
   const handleStartChatWithUser = (targetUserId) => {
     setActiveChatUserId(targetUserId);
+    setActiveConversationId(null);
     navigateTo('chat');
   };
 
@@ -110,11 +121,9 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAF8] dark:bg-[#0D0D0D] text-[#111111] dark:text-[#F5F5F5] gap-3">
-        <div className="w-10 h-10 rounded-[8px] bg-[#111111] dark:bg-[#F5F5F5] text-[#FAFAF8] dark:text-[#111111] flex items-center justify-center shadow-sm">
-          <span className="font-extrabold text-[18px] tracking-tight">S</span>
-        </div>
-        <div className="flex items-center gap-2 text-[12px] text-[#6B6B6B] dark:text-[#A0A0A0]">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAF8] dark:bg-[#0D0D0D] text-[#111111] dark:text-[#F5F5F5] gap-4">
+        <BrandLockup size="lg" layout="vertical" />
+        <div className="flex items-center gap-2 text-[12px] text-[#6B6B6B] dark:text-[#A0A0A0] mt-3">
           <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FF5C35] dark:text-[#FF6845]" />
           <span>Starting ShiftAura...</span>
         </div>
@@ -155,7 +164,11 @@ function AppContent() {
           <ChatView
             onSelectPost={handleSelectPost}
             initialTargetUserId={activeChatUserId}
-            onClearInitialTarget={() => setActiveChatUserId(null)}
+            initialConversationId={activeConversationId}
+            onClearInitialTarget={() => {
+              setActiveChatUserId(null);
+              setActiveConversationId(null);
+            }}
           />
         </div>
 

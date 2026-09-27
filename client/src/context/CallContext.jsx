@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { useSocket } from './SocketContext';
 import { useAuth } from './AuthContext';
+import api from '../services/api';
 
 const CallContext = createContext();
 
@@ -12,7 +13,11 @@ export const CALL_STATES = {
   ACCEPTING: 'ACCEPTING',
   CONNECTING: 'CONNECTING',
   CONNECTED: 'CONNECTED',
+  MINIMIZED: 'MINIMIZED',
   ENDING: 'ENDING',
+  ENDED: 'ENDED',
+  MISSED: 'MISSED',
+  DECLINED: 'DECLINED',
 };
 
 const ICE_SERVERS = {
@@ -368,6 +373,10 @@ export const CallProvider = ({ children }) => {
 
     // 1. Incoming call event (Callee)
     const handleIncomingCall = ({ callId, caller, callType }) => {
+      // Prevent duplicate call sessions for the exact same callId
+      if (activeCallRef.current?.callId === callId) {
+        return;
+      }
       setIncomingCall({ callId, caller, callType });
       setActiveCall({ callId, recipientUser: caller, type: callType });
       setCallState(CALL_STATES.INCOMING_CALL);
@@ -459,6 +468,7 @@ export const CallProvider = ({ children }) => {
 
     // 7. Call Rejected or Busy
     const handleRejected = ({ reason }) => {
+      setCallState(CALL_STATES.DECLINED);
       const message = reason === 'busy' ? 'User is busy on another call.' : 'Call was declined.';
       alert(message);
       cleanupCall('Call rejected/busy');
@@ -466,11 +476,13 @@ export const CallProvider = ({ children }) => {
 
     // 8. Call Cancelled by caller
     const handleCancelled = () => {
+      setCallState(CALL_STATES.MISSED);
       cleanupCall('Call cancelled by caller');
     };
 
     // 9. Call Ended by peer
     const handleEnded = () => {
+      setCallState(CALL_STATES.ENDED);
       cleanupCall('Call ended by peer');
     };
 
@@ -592,6 +604,7 @@ export const CallProvider = ({ children }) => {
     if (socket && incomingCall) {
       socket.emit('call:reject', { callId: incomingCall.callId, reason });
     }
+    setCallState(CALL_STATES.DECLINED);
     cleanupCall('Rejected by user');
   };
 
@@ -607,8 +620,69 @@ export const CallProvider = ({ children }) => {
         socket.emit('call:end', { callId: currentCall.callId, duration: callDuration });
       }
     }
+    setCallState(CALL_STATES.ENDED);
     cleanupCall('Hangup');
   };
+
+  // Handle URL deep-link parameters for calls (from notification clicks / PWA wake-up)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !socket || !user) return;
+    const params = new URLSearchParams(window.location.search);
+    const urlCallId = params.get('callId');
+    const autoAccept = params.get('autoAccept') === 'true';
+    const callWith = params.get('callWith');
+    const callType = params.get('type') || 'video';
+
+    // 1. "Call back" action from missed call notification
+    if (callWith && callState === CALL_STATES.IDLE) {
+      window.history.replaceState({}, '', '/calls');
+      startCall({ recipientId: callWith, type: callType });
+      return;
+    }
+
+    // 2. Incoming call click or "Answer" action from notification
+    if (urlCallId) {
+      if (activeCallRef.current?.callId === urlCallId) {
+        return;
+      }
+
+      window.history.replaceState({}, '', '/calls');
+
+      api
+        .get(`/api/v1/calls/${urlCallId}`)
+        .then((res) => {
+          const callData = res.data?.data;
+          if (callData && callData.status === 'ringing') {
+            const isCaller = String(callData.caller?._id || callData.caller) === String(user._id);
+            if (!isCaller) {
+              const incoming = {
+                callId: callData._id,
+                caller: callData.caller,
+                callType: callData.callType,
+              };
+              setIncomingCall(incoming);
+              setActiveCall({
+                callId: callData._id,
+                recipientUser: callData.caller,
+                type: callData.callType,
+              });
+              setCallState(CALL_STATES.INCOMING_CALL);
+              isCallerRef.current = false;
+              audioSynthRef.current.playIncomingRingtone();
+
+              if (autoAccept) {
+                setTimeout(() => {
+                  acceptCall();
+                }, 300);
+              }
+            }
+          }
+        })
+        .catch((err) => {
+          console.warn('[CallContext] Could not fetch deep-linked call:', err.message);
+        });
+    }
+  }, [socket, user]);
 
   // Toggle audio mute
   const toggleAudio = () => {

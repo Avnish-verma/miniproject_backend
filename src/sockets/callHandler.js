@@ -36,12 +36,25 @@ const callHandler = (io, socket) => {
           message: `missed a ${type} call`,
         });
 
+        const callerAvatar = socket.user.profilePic?.url || '/icon-192.png';
+        const callerName = socket.user.fullname || socket.user.userId;
         pushService.sendToUser(recipientId, {
-          title: 'Missed Call',
-          body: `Missed a ${type} call from ${socket.user.fullname || socket.user.userId}`,
-          icon: socket.user.profilePic || '/favicon.svg',
+          title: 'ShiftAura',
+          body: `Missed ${type} call\n${callerName}`,
+          icon: callerAvatar,
           tag: `missed-call-${missedCall._id}`,
-          data: { url: '/calls', type: 'CALL_MISSED' },
+          data: {
+            url: `/calls?callWith=${currentUserId}&type=${type}`,
+            callId: missedCall._id.toString(),
+            callerId: currentUserId.toString(),
+            callerName,
+            callType: type,
+            type: 'CALL_MISSED',
+          },
+          actions: [
+            { action: 'callback', title: 'Call back' },
+            { action: 'open', title: 'Open' },
+          ],
         }).catch((err) => logger.warn(`[Call Handler] Push error: ${err.message}`));
 
         if (typeof callback === 'function') callback({ error: 'USER_OFFLINE', isOffline: true });
@@ -67,20 +80,27 @@ const callHandler = (io, socket) => {
       });
 
       // Dispatch high-priority Web Push notification for background/PWA
+      const callerAvatar = socket.user.profilePic?.url || '/icon-192.png';
+      const callerName = socket.user.fullname || socket.user.userId;
       pushService.sendToUser(recipientId, {
-        title: `Incoming ${type === 'video' ? 'Video' : 'Audio'} Call`,
-        body: `${socket.user.fullname || socket.user.userId} is calling you on ShiftAura...`,
-        icon: socket.user.profilePic || '/favicon.svg',
+        title: 'ShiftAura',
+        body: `Incoming ${type === 'video' ? 'video' : 'audio'} call\n${callerName}`,
+        icon: callerAvatar,
         tag: `call-${call._id}`,
         urgency: 'high',
         vibrate: [300, 200, 300, 200, 500],
         data: {
           url: `/calls?callId=${call._id}`,
           callId: call._id.toString(),
+          callerId: currentUserId.toString(),
+          callerName,
+          callerAvatar,
+          callType: type,
+          timestamp: Date.now(),
           type: 'CALL_INCOMING',
         },
         actions: [
-          { action: 'accept', title: 'Accept' },
+          { action: 'accept', title: 'Answer' },
           { action: 'decline', title: 'Decline' },
         ],
       }).catch((err) => logger.warn(`[Call Handler] Incoming call push error: ${err.message}`));
@@ -149,6 +169,28 @@ const callHandler = (io, socket) => {
       await callService.updateCallStatus(callId, 'cancelled');
 
       io.to(`user:${call.callee.toString()}`).emit(SOCKET_EVENTS.CALL_CANCELLED, { callId });
+
+      // Dispatch Missed Call push to callee (replaces ringing notification)
+      const callerAvatar = socket.user.profilePic?.url || '/icon-192.png';
+      const callerName = socket.user.fullname || socket.user.userId;
+      pushService.sendToUser(call.callee, {
+        title: 'ShiftAura',
+        body: `Missed ${call.callType} call\n${callerName}`,
+        icon: callerAvatar,
+        tag: `call-${call._id}`, // Replaces the ringing call notification!
+        data: {
+          url: `/calls?callWith=${currentUserId}&type=${call.callType}`,
+          callId: call._id.toString(),
+          callerId: currentUserId.toString(),
+          callerName,
+          callType: call.callType,
+          type: 'CALL_MISSED',
+        },
+        actions: [
+          { action: 'callback', title: 'Call back' },
+          { action: 'open', title: 'Open' },
+        ],
+      }).catch((err) => logger.warn(`[Call Handler] Push error on call cancel: ${err.message}`));
     } catch (err) {
       logger.error(`[Call Handler] Error cancelling call: ${err.message}`);
     }

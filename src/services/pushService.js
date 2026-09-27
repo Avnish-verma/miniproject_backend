@@ -67,12 +67,13 @@ class PushService {
       const stringPayload = JSON.stringify({
         title: payload.title || 'ShiftAura',
         body: payload.body || 'New activity on ShiftAura',
-        icon: payload.icon || '/favicon.svg',
-        badge: '/favicon.svg',
+        icon: payload.icon || '/icon-192.png',
+        badge: payload.badge || '/badge-96.png',
         tag: payload.tag || 'shiftaura-general',
         data: payload.data || {},
         vibrate: payload.vibrate || [100, 50, 100],
         actions: payload.actions || [],
+        requireInteraction: payload.requireInteraction || false,
       });
 
       let delivered = 0;

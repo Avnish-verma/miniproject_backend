@@ -49,6 +49,37 @@ class CallController {
       next(error);
     }
   }
+
+  async getCallById(req, res, next) {
+    try {
+      const { callId } = req.params;
+      const Call = require('../models/Call');
+      const call = await Call.findById(callId)
+        .populate('caller', 'userId fullname profilePic')
+        .populate('callee', 'userId fullname profilePic');
+
+      if (!call) {
+        return res.status(HTTP_STATUS.NOT_FOUND).json({
+          success: false,
+          error: { message: 'Call not found' },
+        });
+      }
+
+      if (!call.caller._id.equals(req.user._id) && !call.callee._id.equals(req.user._id)) {
+        return res.status(HTTP_STATUS.FORBIDDEN).json({
+          success: false,
+          error: { message: 'Unauthorized access to call session' },
+        });
+      }
+
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        data: call,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new CallController();

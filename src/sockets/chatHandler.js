@@ -83,16 +83,23 @@ const chatHandler = (io, socket) => {
           });
 
           // Dispatch Web Push notification for background/offline delivery
+          const senderAvatar = socket.user.profilePic?.url || '/icon-192.png';
           pushService.sendToUser(memberId, {
             title: socket.user.fullname || socket.user.userId || 'ShiftAura',
             body: text || (mediaUrl ? 'Sent you an attachment' : 'Sent you a message'),
-            icon: socket.user.profilePic || '/favicon.svg',
+            icon: senderAvatar,
             tag: `chat-${conversationId}`,
             data: {
-              url: `/chat?user=${socket.user.userId}`,
-              conversationId,
+              url: `/chat?conversationId=${conversationId}`,
+              conversationId: conversationId.toString(),
+              senderId: currentUserId.toString(),
+              senderName: socket.user.fullname || socket.user.userId,
               type: 'MESSAGE',
             },
+            actions: [
+              { action: 'open', title: 'Open' },
+              { action: 'reply', title: 'Reply', type: 'text', placeholder: 'Type a reply...' },
+            ],
           }).catch((err) => {
             logger.warn(`[Socket Chat] Push dispatch error: ${err.message}`);
           });

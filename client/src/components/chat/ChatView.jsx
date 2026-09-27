@@ -21,7 +21,12 @@ import Avatar from '../common/Avatar';
 import Button from '../common/Button';
 import api from '../../services/api';
 
-export default function ChatView({ onSelectPost, initialTargetUserId, onClearInitialTarget }) {
+export default function ChatView({
+  onSelectPost,
+  initialTargetUserId,
+  initialConversationId,
+  onClearInitialTarget,
+}) {
   const { user } = useAuth();
   const { socket, isUserOnline } = useSocket();
   const { startCall } = useCall();
@@ -73,6 +78,62 @@ export default function ChatView({ onSelectPost, initialTargetUserId, onClearIni
     handleStartConversationWithUser(initialTargetUserId);
     if (onClearInitialTarget) onClearInitialTarget();
   }, [initialTargetUserId]);
+
+  // Handle initial conversation ID passed via prop / notification deep link
+  useEffect(() => {
+    if (!initialConversationId) return;
+
+    const selectConversationById = async () => {
+      const existing = conversations.find((c) => c._id === initialConversationId);
+      if (existing) {
+        setActiveConversation(existing);
+        setShowMobileChat(true);
+        if (onClearInitialTarget) onClearInitialTarget();
+        return;
+      }
+
+      try {
+        const res = await api.get('/api/v1/chat/conversations');
+        if (res.data?.data) {
+          setConversations(res.data.data);
+          const found = res.data.data.find((c) => c._id === initialConversationId);
+          if (found) {
+            setActiveConversation(found);
+            setShowMobileChat(true);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load deep-linked conversation:', err);
+      } finally {
+        if (onClearInitialTarget) onClearInitialTarget();
+      }
+    };
+
+    selectConversationById();
+  }, [initialConversationId]);
+
+  // Listen for inline replies sent from Service Worker notification action
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleSwMessage = (event) => {
+      if (
+        event.data?.type === 'NOTIFICATION_INLINE_REPLY' &&
+        event.data?.conversationId &&
+        event.data?.text
+      ) {
+        if (socket) {
+          socket.emit('message:send', {
+            conversationId: event.data.conversationId,
+            text: event.data.text,
+          });
+        }
+      }
+    };
+    navigator.serviceWorker?.addEventListener('message', handleSwMessage);
+    return () => {
+      navigator.serviceWorker?.removeEventListener('message', handleSwMessage);
+    };
+  }, [socket]);
 
   // Search users for new conversation modal
   useEffect(() => {
