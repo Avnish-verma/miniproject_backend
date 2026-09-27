@@ -11,34 +11,12 @@ router.post('/', async (req, res, next) => {
 
     const result = await authService.register({ fullname, userId, password, emailId });
     res.status(201).json({
-<<<<<<< HEAD
       success: true,
       message: result.message || 'User registered successfully',
     });
   } catch (error) {
     if (error.statusCode === 409) {
       return res.status(409).json({ success: false, message: error.message });
-=======
-        success:true,message:"user registered successfully"
-    })
-})
-
-router.post("/verify",async(req,res)=>{
-    const {userId,otp}=req.body;  
-     if (!userId || !otp) {
-            return res.status(400).json({ success: false, message: "userId and otp are required" });
-        }
-    const user=await userModel.findOne({userId});
-  
-    if(user.otp==otp||otp==1010){
-        user.isEmailVerified=true;
-        user.otp=undefined;
-        await user.save();
-        res.status(201).json({
-            success:true,message:"email verified"
-        })
-
->>>>>>> 96bde56ea8e6df196f58cf219f212aed9b3b92a1
     }
     next(error);
   }
@@ -65,9 +43,4 @@ router.post('/verify', async (req, res, next) => {
   }
 });
 
-<<<<<<< HEAD
 module.exports = router;
-=======
-})
-module.exports = router;
->>>>>>> 96bde56ea8e6df196f58cf219f212aed9b3b92a1
