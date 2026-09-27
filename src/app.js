@@ -15,6 +15,9 @@ const protect = require('../controller/protect');
 
 const app = express();
 
+// Trust reverse proxy (Render, Cloudflare, Vercel, AWS)
+app.set('trust proxy', 1);
+
 // 1. Security headers & CORS & NoSQL sanitizer
 securityMiddleware(app);
 
